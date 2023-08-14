@@ -9,14 +9,14 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 file(GLOB source_files src/*.cpp)
 
 if(WIN32)
-  set(system_shared_files Shell32)
+  set(system_shared_files Shell32 Iphlpapi)
 elseif(UNIX)
   # Qt6 和 KF5冲突
   # set(system_shared_files KF5::WindowSystem)
   set(system_shared_files)
 endif()
 set(qt_shared_files Qt6::Core Qt6::Widgets)
-set(pliugin_libfiles neospeedbox_core pluginmgr)
+set(pliugin_libfiles pluginmgr)
 
 
 # ===== 编译皮肤 ======
