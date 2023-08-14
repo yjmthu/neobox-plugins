@@ -93,6 +93,16 @@ git push -u origin main
 
 > 在 Windows 10/11 下可直接调用内置 Ocr 引擎，也可以使用 Tesseract。使用Tesseract需要[下载语言数据](https://tesseract-ocr.github.io/tessdoc/Data-Files.html)。
 
++ Arch Linux下无法使用，请先运行如下命令：
+
+```sh
+sudo pacman -S tesseract
+```
+
++ **Arch Linux**下可通过命令行安装语言包：
+    + 例如，中文简体语言包为：`tesseract-data-chi_sim`。
+    + 安装后需要设置路径为`/usr/share/tessdata`。
+
 ![文字识别](https://cloud.tsinghua.edu.cn/f/612106e8c64c49c393c8/?dl=1)
 
 ![文字识别](https://cloud.tsinghua.edu.cn/f/42e2e76532a2416aa9fa/?dl=1)
