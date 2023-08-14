@@ -1,5 +1,6 @@
+#include <neobox/pluginmgr.h>
+
 #include <squareform.hpp>
-#include <pluginmgr.h>
 #include <screenfetch.hpp>
 
 #include <QPainterPath>

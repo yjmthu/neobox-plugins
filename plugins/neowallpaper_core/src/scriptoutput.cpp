@@ -2,7 +2,7 @@
 
 #include <wallpaper.h>
 #include <wallbase.h>
-#include <systemapi.h>
+#include <neobox/systemapi.h>
 
 #include <ranges>
 #include <utility>

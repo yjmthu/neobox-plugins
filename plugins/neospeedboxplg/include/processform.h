@@ -1,7 +1,7 @@
 #ifndef PROCESSFORM_H
 #define PROCESSFORM_H
 
-#include <widgetbase.hpp>
+#include <neobox/widgetbase.hpp>
 
 class ProcessForm: public WidgetBase
 {

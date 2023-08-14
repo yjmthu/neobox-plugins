@@ -1,7 +1,7 @@
 ﻿#ifndef SPEEDBOXCFG_H
 #define SPEEDBOXCFG_H
 
-#include <neoconfig.h>
+#include <neobox/neoconfig.h>
 
 class SpeedBoxCfg: public NeoConfig {
   ConfigConsruct(SpeedBoxCfg)

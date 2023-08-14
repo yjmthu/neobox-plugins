@@ -1,8 +1,8 @@
 #include <smallform.hpp>
 #include <squareform.hpp>
-#include <pluginmgr.h>
+#include <neobox/pluginmgr.h>
 #include <colordlg.hpp>
-#include <yjson.h>
+#include <yjson/yjson.h>
 #include <colorconfig.h>
 #include <colorback.hpp>
 #include <screenfetch.hpp>

@@ -57,6 +57,7 @@ set(speedbox_libs
 
 target_link_libraries(${plugin_name} PUBLIC
   ${speedbox_libs}
+  ${qt_shared_files}
 )
 
 install_plugin(${plugin_name})

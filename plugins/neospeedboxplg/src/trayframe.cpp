@@ -1,6 +1,6 @@
-﻿#include <systemapi.h>
+﻿#include <neobox/systemapi.h>
 #include <trayframe.h>
-#include <pluginmgr.h>
+#include <neobox/pluginmgr.h>
 #include <speedbox.h>
 
 #include <thread>

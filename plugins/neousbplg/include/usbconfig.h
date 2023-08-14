@@ -1,7 +1,7 @@
 ﻿#ifndef USBCONFIG_H
 #define USBCONFIG_H
 
-#include <neoconfig.h>
+#include <neobox/neoconfig.h>
 
 class UsbConfig: public NeoConfig
 {

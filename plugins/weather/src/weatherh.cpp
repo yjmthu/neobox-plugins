@@ -1,6 +1,6 @@
 #include <weatherh.h>
 #include <weatherdlg.h>
-#include <pluginmgr.h>
+#include <neobox/pluginmgr.h>
 
 #include <QLabel>
 #include <QEvent>

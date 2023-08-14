@@ -1,5 +1,6 @@
-﻿#include <ocrdialog.h>
-#include <pluginmgr.h>
+﻿#include <neobox/pluginmgr.h>
+
+#include <ocrdialog.h>
 
 #include <QFile>
 #include <QHBoxLayout>

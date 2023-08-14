@@ -1,7 +1,7 @@
 ﻿#ifndef COLORCONFIG_H
 #define COLORCONFIG_H
 
-#include <neoconfig.h>
+#include <neobox/neoconfig.h>
 
 class ColorConfig: public NeoConfig
 {

@@ -3,7 +3,7 @@
 
 #include <optional>
 #include <map>
-#include <yjson.h>
+#include <yjson/yjson.h>
 #include <vector>
 #include <functional>
 #include <memory>

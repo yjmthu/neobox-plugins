@@ -1,8 +1,8 @@
 #include <neosystemplg.h>
-#include <yjson.h>
-#include <systemapi.h>
-#include <menubase.hpp>
-#include <neoconfig.h>
+#include <yjson/yjson.h>
+#include <neobox/systemapi.h>
+#include <neobox/menubase.hpp>
+#include <neobox/neoconfig.h>
 
 #include <QDir>
 
@@ -12,7 +12,7 @@
 #endif
 
 #define PluginName NeoSystemPlg
-#include <pluginexport.cpp>
+#include <neobox/pluginexport.cpp>
 
 class SystemCfg: public NeoConfig {
   ConfigConsruct(SystemCfg)

@@ -1,15 +1,15 @@
 #include <neocolorplg.h>
-#include <yjson.h>
+#include <yjson/yjson.h>
 #include <colordlg.hpp>
 #include <smallform.hpp>
-#include <menubase.hpp>
+#include <neobox/menubase.hpp>
 
 #include <QAction>
 #include <QMenu>
 
 #define PluginName NeoColorPlg
 
-#include <pluginexport.cpp>
+#include <neobox/pluginexport.cpp>
 
 PluginName::PluginName(YJson& settings)
   : PluginObject(InitSettings(settings)

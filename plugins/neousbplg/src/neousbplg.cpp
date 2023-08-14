@@ -2,7 +2,7 @@
 #include <usbdlg.hpp>
 
 #define PluginName NeoUsbPlg
-#include <pluginexport.cpp>
+#include <neobox/pluginexport.cpp>
 
 #include <QApplication>
 

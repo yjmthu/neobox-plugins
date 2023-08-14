@@ -1,7 +1,7 @@
-﻿#include <systemapi.h>
+﻿#include <neobox/systemapi.h>
 #include <download.h>
-#include <pluginmgr.h>
-#include <httplib.h>
+#include <neobox/pluginmgr.h>
+#include <neobox/httplib.h>
 #include <thread>
 
 using namespace std::literals;

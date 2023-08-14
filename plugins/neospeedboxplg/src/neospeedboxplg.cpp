@@ -1,14 +1,14 @@
 #include <neospeedboxplg.h>
 #include <speedbox.h>
 #include <trayframe.h>
-#include <pluginobject.h>
-#include <yjson.h>
-#include <systemapi.h>
-#include <neosystemtray.hpp>
+#include <neobox/pluginobject.h>
+#include <yjson/yjson.h>
+#include <neobox/systemapi.h>
+#include <neobox/neosystemtray.hpp>
 #include <netspeedhelper.h>
-#include <neomenu.hpp>
+#include <neobox/neomenu.hpp>
 
-#include <menubase.hpp>
+#include <neobox/menubase.hpp>
 #include <QActionGroup>
 #include <QInputDialog>
 #include <QFileDialog>
@@ -28,7 +28,7 @@
 #include <ranges>
 
 #define PluginName NeoSpeedboxPlg
-#include <pluginexport.cpp>
+#include <neobox/pluginexport.cpp>
 
 namespace fs = std::filesystem;
 using namespace std::literals;

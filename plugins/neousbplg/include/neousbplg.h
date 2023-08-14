@@ -1,7 +1,7 @@
 #ifndef NEOUSBPLG_H
 #define NEOUSBPLG_H
 
-#include <pluginobject.h>
+#include <neobox/pluginobject.h>
 #include <QAbstractNativeEventFilter>
 #include <map>
 

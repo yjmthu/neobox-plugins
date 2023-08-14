@@ -1,7 +1,7 @@
 ﻿#ifndef TRANSLATECFG_H
 #define TRANSLATECFG_H
 
-#include <neoconfig.h>
+#include <neobox/neoconfig.h>
 
 class TranslateCfg: public NeoConfig
 {

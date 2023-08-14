@@ -1,8 +1,8 @@
 #ifndef WEATHERPLG_H
 #define WEATHERPLG_H
 
-#include <pluginobject.h>
-#include <yjson.h>
+#include <neobox/pluginobject.h>
+#include <yjson/yjson.h>
 #include <weathercfg.h>
 
 class WeatherPlg: public PluginObject

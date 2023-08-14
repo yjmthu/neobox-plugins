@@ -1,7 +1,7 @@
 ﻿#ifndef WALLCONFIG_H
 #define WALLCONFIG_H
 
-#include <neoconfig.h>
+#include <neobox/neoconfig.h>
 
 struct WallConfig: NeoConfig
 {

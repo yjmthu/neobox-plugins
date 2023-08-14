@@ -2,7 +2,7 @@
 #define CITYLIST_HPP
 
 #include <QListWidget>
-#include <yjson.h>
+#include <yjson/yjson.h>
 
 class WeatherCfg;
 

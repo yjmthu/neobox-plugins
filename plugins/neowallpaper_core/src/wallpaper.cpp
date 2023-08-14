@@ -1,9 +1,10 @@
-#include <yjson.h>
-#include <httplib.h>
+#include <yjson/yjson.h>
+#include <neobox/httplib.h>
+#include <neobox/systemapi.h>
+#include <neobox/neotimer.h>
+#include <neobox/pluginmgr.h>
+
 #include <stdexcept>
-#include <systemapi.h>
-#include <neotimer.h>
-#include <pluginmgr.h>
 #include <download.h>
 #include <platform.hpp>
 

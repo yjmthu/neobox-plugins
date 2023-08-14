@@ -1,7 +1,7 @@
 #ifndef SAVEDCITY_HPP
 #define SAVEDCITY_HPP
 
-#include <widgetbase.hpp>
+#include <neobox/widgetbase.hpp>
 #include <weathercfg.h>
 
 class SavedCityItem;

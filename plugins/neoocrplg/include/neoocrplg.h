@@ -1,7 +1,7 @@
 #ifndef NEOOCRPLG_H
 #define NEOOCRPLG_H
 
-#include <pluginobject.h>
+#include <neobox/pluginobject.h>
 #include <ocrconfig.h>
 
 class QWidget;

@@ -1,12 +1,12 @@
 #ifndef TRANSLATEDLG_HPP
 #define TRANSLATEDLG_HPP
 
-#include <widgetbase.hpp>
+#include <neobox/widgetbase.hpp>
 #include <QPlainTextEdit>
 #include <QTextBrowser>
 
 #include <translate.h>
-#include <pluginobject.h>
+#include <neobox/pluginobject.h>
 
 class QPushButton;
 

@@ -1,12 +1,12 @@
 #include <bingapi.h>
-#include <httplib.h>
+#include <neobox/httplib.h>
 #include <iostream>
 #include <stdexcept>
 #include <wallpaper.h>
 #include <wallbase.h>
-#include <systemapi.h>
+#include <neobox/systemapi.h>
 #include <download.h>
-#include <neotimer.h>
+#include <neobox/neotimer.h>
 
 #include <utility>
 #include <numeric>

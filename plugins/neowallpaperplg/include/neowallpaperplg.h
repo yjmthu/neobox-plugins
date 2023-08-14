@@ -1,7 +1,7 @@
 #ifndef NEOWALLPAPERPLG_H
 #define NEOWALLPAPERPLG_H
 
-#include <pluginobject.h>
+#include <neobox/pluginobject.h>
 
 class NeoWallpaperPlg: public PluginObject
 {

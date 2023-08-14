@@ -1,8 +1,8 @@
 #include <native.h>
-#include <httplib.h>
+#include <neobox/httplib.h>
 #include <wallpaper.h>
 #include <download.h>
-#include <systemapi.h>
+#include <neobox/systemapi.h>
 
 #include <set>
 #include <utility>

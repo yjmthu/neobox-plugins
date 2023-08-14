@@ -6,10 +6,10 @@
 #include <scriptex.h>
 #include <neowallpaperplg.h>
 #include <wallpaper.h>
-#include <yjson.h>
-#include <menubase.hpp>
-#include <pluginmgr.h>
-#include <neomenu.hpp>
+#include <yjson/yjson.h>
+#include <neobox/menubase.hpp>
+#include <neobox/pluginmgr.h>
+#include <neobox/neomenu.hpp>
 
 #include <QString>
 #include <QInputDialog>
@@ -27,7 +27,7 @@
 #include <ranges>
 
 #define PluginName NeoWallpaperPlg
-#include <pluginexport.cpp>
+#include <neobox/pluginexport.cpp>
 
 PluginName::PluginName(YJson& settings):
   PluginObject(InitSettings(settings), u8"neowallpaperplg", u8"壁纸引擎"),

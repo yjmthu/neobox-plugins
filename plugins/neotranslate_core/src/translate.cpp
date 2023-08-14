@@ -1,8 +1,8 @@
-#include <systemapi.h>
+#include <neobox/systemapi.h>
 #include <array>
 #include <translate.h>
-#include <yjson.h>
-#include <httplib.h>
+#include <yjson/yjson.h>
+#include <neobox/httplib.h>
 #include <sha256.h>
 #include <md5.h>
 #include <translatecfg.h>

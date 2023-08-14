@@ -1,14 +1,14 @@
 #include <neotranslateplg.h>
 #include <translatedlg.hpp>
-#include <yjson.h>
-#include <menubase.hpp>
+#include <yjson/yjson.h>
+#include <neobox/menubase.hpp>
 
 #include <QPlainTextEdit>
 #include <QMimeData>
 #include <QDropEvent>
 
 #define PluginName NeoTranslatePlg
-#include <pluginexport.cpp>
+#include <neobox/pluginexport.cpp>
 
 /*
  * NeoTranslatePlugin

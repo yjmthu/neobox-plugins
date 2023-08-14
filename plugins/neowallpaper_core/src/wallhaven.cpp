@@ -1,8 +1,9 @@
+#include <neobox/httplib.h>
+
 #include <wallhaven.h>
-#include <httplib.h>
 #include <wallpaper.h>
 #include <wallbase.h>
-#include <systemapi.h>
+#include <neobox/systemapi.h>
 
 #include <regex>
 #include <utility>

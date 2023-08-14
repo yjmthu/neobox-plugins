@@ -1,11 +1,12 @@
+#include <yjson/yjson.h>
+#include <neobox/pluginobject.h>
+#include <neobox/pluginmgr.h>
+#include <neobox/menubase.hpp>
+
 #include <colordlg.hpp>
 #include <ui_colordlg.h>
-#include <yjson.h>
-#include <pluginmgr.h>
 #include <smallform.hpp>
 #include <itemcolor.hpp>
-#include <pluginobject.h>
-#include <menubase.hpp>
 
 #include <QClipboard>
 #include <QVBoxLayout>

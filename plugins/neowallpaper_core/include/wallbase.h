@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <time.h>
-#include <yjson.h>
+#include <yjson/yjson.h>
 
 #include <atomic>
 #include <filesystem>

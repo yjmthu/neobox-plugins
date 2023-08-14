@@ -1,11 +1,11 @@
 #include <translatedlg.hpp>
 #include <translate.h>
-#include <pluginmgr.h>
-#include <pluginobject.h>
+#include <neobox/pluginmgr.h>
+#include <neobox/pluginobject.h>
 #include <heightctrl.hpp>
-#include <yjson.h>
-#include <menubase.hpp>
-#include <neomenu.hpp>
+#include <yjson/yjson.h>
+#include <neobox/menubase.hpp>
+#include <neobox/neomenu.hpp>
 #include <translatecfg.h>
 
 #include <QApplication>

@@ -1,7 +1,7 @@
 #ifndef NEOCOLORPLG_H
 #define NEOCOLORPLG_H
 
-#include <pluginobject.h>
+#include <neobox/pluginobject.h>
 #include <colorconfig.h>
 
 class NeoColorPlg: public PluginObject

@@ -2,7 +2,7 @@
 #define WEATHERH_HPP
 
 #include <QScrollArea>
-#include <yjson.h>
+#include <yjson/yjson.h>
 #include <QProgressBar>
 #include <QVBoxLayout>
 #include <QLabel>

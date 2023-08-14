@@ -1,7 +1,7 @@
 #ifndef NEOSYSTEMPLG_H
 #define NEOSYSTEMPLG_H
 
-#include <pluginobject.h>
+#include <neobox/pluginobject.h>
 
 class NeoSystemPlg: public PluginObject
 {

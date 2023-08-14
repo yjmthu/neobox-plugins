@@ -1,8 +1,8 @@
-#include <systemapi.h>
+#include <neobox/systemapi.h>
 #include <neoocr.h>
-#include <yjson.h>
-#include <httplib.h>
-#include <pluginmgr.h>
+#include <yjson/yjson.h>
+#include <neobox/httplib.h>
+#include <neobox/pluginmgr.h>
 #include <ocrconfig.h>
 
 #include <ranges>

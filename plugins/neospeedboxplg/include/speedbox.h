@@ -1,10 +1,10 @@
 #ifndef SPEEDBOX_H
 #define SPEEDBOX_H
 
-#include <widgetbase.hpp>
+#include <neobox/widgetbase.hpp>
 
 #include <filesystem>
-#include <pluginobject.h>
+#include <neobox/pluginobject.h>
 #include <speedboxcfg.h>
 
 namespace fs = std::filesystem;

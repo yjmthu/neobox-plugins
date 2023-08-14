@@ -1,7 +1,7 @@
 ﻿#ifndef OCRDIALOG_H
 #define OCRDIALOG_H
 
-#include <widgetbase.hpp>
+#include <neobox/widgetbase.hpp>
 #include <neoocr.h>
 
 class OcrDialog: public WidgetBase {

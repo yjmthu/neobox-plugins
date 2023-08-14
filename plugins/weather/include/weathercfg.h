@@ -1,7 +1,7 @@
 #ifndef WEATHERCFG_H
 #define WEATHERCFG_H
 
-#include <neoconfig.h>
+#include <neobox/neoconfig.h>
 
 class WeatherCfg: public NeoConfig {
   ConfigConsruct(WeatherCfg)

@@ -1,8 +1,8 @@
 #include <scriptex.h>
-#include <pluginobject.h>
-#include <listeditor.h>
-#include <yjson.h>
-#include <pluginmgr.h>
+#include <neobox/pluginobject.h>
+#include <neobox/listeditor.h>
+#include <yjson/yjson.h>
+#include <neobox/pluginmgr.h>
 
 #include <QFileDialog>
 #include <QActionGroup>

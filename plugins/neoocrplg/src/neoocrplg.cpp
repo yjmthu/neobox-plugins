@@ -1,10 +1,10 @@
 #include <neoocrplg.h>
 #include <neoocr.h>
-#include <pluginmgr.h>
-#include <neomenu.hpp>
+#include <neobox/pluginmgr.h>
+#include <neobox/neomenu.hpp>
 #include <screenfetch.h>
-#include <yjson.h>
-#include <menubase.hpp>
+#include <yjson/yjson.h>
+#include <neobox/menubase.hpp>
 #include <ocrdialog.h>
 
 #include <QDir>
@@ -34,7 +34,7 @@
 #include <queue>
 
 #define PluginName NeoOcrPlg
-#include <pluginexport.cpp>
+#include <neobox/pluginexport.cpp>
 
 namespace fs = std::filesystem;
 using namespace std::literals;

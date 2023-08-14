@@ -2,8 +2,8 @@
 #define MAPEDITOR_H
 
 #include <QDialog>
-#include <yjson.h>
-#include <editorbase.hpp>
+#include <yjson/yjson.h>
+#include <neobox/editorbase.hpp>
 
 class MapEditor: public EditorBase
 {

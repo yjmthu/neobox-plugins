@@ -1,7 +1,7 @@
 #ifndef NEOTRANSLATEPLG_H
 #define NEOTRANSLATEPLG_H
 
-#include <pluginobject.h>
+#include <neobox/pluginobject.h>
 #include <translatecfg.h>
 
 class NeoTranslatePlg: public PluginObject

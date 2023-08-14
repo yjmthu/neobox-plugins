@@ -13,12 +13,12 @@
 #include <QProcess>
 #include <QDragEnterEvent>
 
-#include <neomenu.hpp>
+#include <neobox/neomenu.hpp>
 #include <speedbox.h>
-#include <yjson.h>
-#include <pluginmgr.h>
-#include <appcode.hpp>
-#include <pluginobject.h>
+#include <yjson/yjson.h>
+#include <neobox/pluginmgr.h>
+#include <neobox/appcode.hpp>
+#include <neobox/pluginobject.h>
 #include <neospeedboxplg.h>
 #include <skinobject.h>
 #include <netspeedhelper.h>

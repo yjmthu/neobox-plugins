@@ -4,9 +4,9 @@
 #include <QObject>
 #include <memory>
 
-#include <yjson.h>
+#include <yjson/yjson.h>
 #include <weathercfg.h>
-#include <httplib.h>
+#include <neobox/httplib.h>
 
 class Weather: public QObject
 {

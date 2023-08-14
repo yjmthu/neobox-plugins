@@ -1,7 +1,7 @@
 #ifndef COLORDLG_HPP
 #define COLORDLG_HPP
 
-#include <widgetbase.hpp>
+#include <neobox/widgetbase.hpp>
 #include <colorconfig.h>
 
 #ifdef _WIN32

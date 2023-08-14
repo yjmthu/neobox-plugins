@@ -1,8 +1,8 @@
 #include <wallhavenex.h>
 #include <mapeditor.h>
-#include <pluginobject.h>
-#include <yjson.h>
-#include <pluginmgr.h>
+#include <neobox/pluginobject.h>
+#include <yjson/yjson.h>
+#include <neobox/pluginmgr.h>
 
 
 #include <QActionGroup>

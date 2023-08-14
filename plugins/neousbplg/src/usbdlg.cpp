@@ -1,8 +1,9 @@
+#include <yjson/yjson.h>
+#include <neobox/pluginmgr.h>
+
 #include <usbdlg.hpp>
-#include <yjson.h>
 #include <usbdlgitem.hpp>
-#include <pluginmgr.h>
-#include <appcode.hpp>
+#include <neobox/appcode.hpp>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>

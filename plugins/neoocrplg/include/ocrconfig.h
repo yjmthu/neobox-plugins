@@ -1,7 +1,7 @@
 ﻿#ifndef OCRCONFIG_H
 #define OCRCONFIG_H
 
-#include <neoconfig.h>
+#include <neobox/neoconfig.h>
 
 class OcrConfig: public NeoConfig
 {

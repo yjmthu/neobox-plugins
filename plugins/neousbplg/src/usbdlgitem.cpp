@@ -1,5 +1,5 @@
 #include <usbdlgitem.hpp>
-#include <pluginmgr.h>
+#include <neobox/pluginmgr.h>
 
 #ifdef _WIN32
 #include <Windows.h>

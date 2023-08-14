@@ -1,9 +1,9 @@
 #include <weatherdlg.h>
-#include <pluginmgr.h>
-#include <neomenu.hpp>
-#include <yjson.h>
+#include <neobox/pluginmgr.h>
+#include <neobox/neomenu.hpp>
+#include <yjson/yjson.h>
 #include <weather.hpp>
-#include <pluginmgr.h>
+#include <neobox/pluginmgr.h>
 #include <weathercfg.h>
 #include <citysearch.hpp>
 #include <citylist.hpp>

@@ -1,5 +1,5 @@
 #include <mapeditor.h>
-#include <pluginobject.h>
+#include <neobox/pluginobject.h>
 
 #include <QWidget>
 #include <QTableWidget>

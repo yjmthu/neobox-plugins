@@ -1,11 +1,11 @@
 #include <weatherplg.h>
 #include <weatherdlg.h>
-#include <neomenu.hpp>
+#include <neobox/neomenu.hpp>
 
 #include <QMessageBox>
 
 #define PluginName WeatherPlg
-#include <pluginexport.cpp>
+#include <neobox/pluginexport.cpp>
 
 PluginName::PluginName(YJson& settings)
   : PluginObject(InitSettings(settings), u8"weatherplg", u8"天气预报")

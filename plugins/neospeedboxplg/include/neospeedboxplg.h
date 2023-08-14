@@ -1,7 +1,7 @@
 #ifndef NEOSPEEDBOXPLG_H
 #define NEOSPEEDBOXPLG_H
 
-#include <pluginobject.h>
+#include <neobox/pluginobject.h>
 #include <speedboxcfg.h>
 
 class MenuBase;

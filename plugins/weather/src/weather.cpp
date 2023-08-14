@@ -1,5 +1,5 @@
 #include <weather.hpp>
-#include <httplib.h>
+#include <neobox/httplib.h>
 
 #ifdef WEATHER_WRONG_USER_KEY
 #define QWEATHER_ID  "XXXXXXXXXXXXXXXXXX"

@@ -1,6 +1,6 @@
 #include <heightctrl.hpp>
 #include <translatedlg.hpp>
-#include <yjson.h>
+#include <yjson/yjson.h>
 #include <translatecfg.h>
 
 #include <QWheelEvent>

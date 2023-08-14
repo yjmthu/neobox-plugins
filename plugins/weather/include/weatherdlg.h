@@ -1,7 +1,7 @@
 #ifndef WEATHERDLG_H
 #define WEATHERDLG_H
 
-#include <widgetbase.hpp>
+#include <neobox/widgetbase.hpp>
 
 class WeatherDlg: public WidgetBase {
 protected:

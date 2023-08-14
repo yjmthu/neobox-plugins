@@ -1,6 +1,6 @@
 #include <citylist.hpp>
-#include <yjson.h>
-#include <pluginmgr.h>
+#include <yjson/yjson.h>
+#include <neobox/pluginmgr.h>
 #include <weathercfg.h>
 
 #include <QLineEdit>

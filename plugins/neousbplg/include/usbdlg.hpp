@@ -1,7 +1,7 @@
 #ifndef USBDLG_HPP
 #define USBDLG_HPP
 
-#include <widgetbase.hpp>
+#include <neobox/widgetbase.hpp>
 #include <memory>
 
 class UsbDlg: public WidgetBase

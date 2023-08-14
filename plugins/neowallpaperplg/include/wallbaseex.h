@@ -1,8 +1,8 @@
 ﻿#ifndef WALLBASEEX_H
 #define WALLBASEEX_H
 
-#include <menubase.hpp>
-#include <yjson.h>
+#include <neobox/menubase.hpp>
+#include <yjson/yjson.h>
 
 class WallBaseEx: public MenuBase
 {

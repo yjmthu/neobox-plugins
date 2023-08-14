@@ -1,7 +1,7 @@
 #ifndef WEATHERD_HPP
 #define WEATHERD_HPP
 
-#include <yjson.h>
+#include <yjson/yjson.h>
 #include <weatherdlg.h>
 
 #include <QScrollArea>

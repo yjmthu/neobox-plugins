@@ -2,7 +2,7 @@
 #define WEATHERITEM_HPP
 
 #include <QFrame>
-#include <yjson.h>
+#include <yjson/yjson.h>
 #include <QLabel>
 
 

@@ -11,8 +11,8 @@
 #endif
 
 #include "netspeedhelper.h"
-#include <systemapi.h>
-#include <yjson.h>
+#include <neobox/systemapi.h>
+#include <yjson/yjson.h>
 // #include <speedboxcfg.h>
 
 #include <algorithm>
