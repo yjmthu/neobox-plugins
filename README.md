@@ -1,7 +1,8 @@
 # neobox-plugins
+
 Neobox的插件
 
-git push -u origin main
+## 插件列表
 
 <details open="open">
 <summary style="font-size:17pt;">网速悬浮</summary>
@@ -183,3 +184,18 @@ sudo pacman -S tesseract
 ![城市列表](./screenshots/屏幕截图%202023-08-07%20213819.png)
 
 </details>
+
+## 编译方式
+
+1. 克隆并编译Neobox，参见 <https://github.com/yjmthu/Neobox#readme>
+2. 编译插件
+
+```sh
+git clone https://github.com/yjmthu/neobox-plugins.git
+cd neobox-plugins
+cmake -GNinja -B build/Debug -S . -DCMAKE_BUILD_TYPE="Debug" -DPLUGIN_MANAGER_PATH="../Neobox/install"
+cmake --build build/Debug
+cmake -P build/Debug/cmake_install.cmake
+```
+
+其中，**../Neobox/install** 为Neobox编译时的安装目录

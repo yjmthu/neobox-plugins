@@ -9,7 +9,9 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Neobox主程序安装位置
-set(PLUGIN_MANAGER_PATH ../Neobox/install)
+if (NOT PLUGIN_MANAGER_PATH)
+  set(PLUGIN_MANAGER_PATH ../Neobox/install)
+endif()
 
 project(neobox_plugins VERSION 2.4.3 LANGUAGES CXX C)
 
