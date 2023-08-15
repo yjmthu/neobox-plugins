@@ -67,6 +67,7 @@ void PluginName::InitFunctionMap()
     },
   };
 
+#if 0
   m_Following.push_back({u8"neohotkeyplg", [this](PluginEvent event, void* data){
     if (event == PluginEvent::HotKey) {
       // 判断是否为想要的快捷键
@@ -81,6 +82,7 @@ void PluginName::InitFunctionMap()
       }
     }
   }});
+#endif
 }
 
 QAction* PluginName::InitMenuAction()

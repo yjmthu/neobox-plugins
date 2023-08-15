@@ -26,14 +26,12 @@ set(CMAKE_AUTOUIC ON)
 
 add_definitions(-DMYSHAREDLIB_LIBRARY)
 
-set(install_dir ${PROJECT_SOURCE_DIR}/install)
+# set(install_dir ${PROJECT_SOURCE_DIR}/install)
 
 function(install_plugin plugin_name)
   install(TARGETS ${plugin_name}
-    LIBRARY DESTINATION ${install_dir}/plugins
-    ARCHIVE DESTINATION ${install_dir}/lib
-    RUNTIME DESTINATION ${install_dir}/plugins
-    PUBLIC_HEADER DESTINATION ${install_dir}include
+    LIBRARY DESTINATION .
+    RUNTIME DESTINATION .
   )
 endfunction()
 

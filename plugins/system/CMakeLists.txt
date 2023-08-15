@@ -5,10 +5,10 @@ file(GLOB source_files src/*.cpp)
 if(WIN32)
   set(system_shared_files Shell32 PowrProf)
 else()
-  set(system_shared_files "")
+  set(system_shared_files)
 endif()
 
-set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
+set(qt_shared_files Qt6::Core Qt6::Widgets)
 set(pliugin_libfiles pluginmgr)
 set(plugin_name neosystemplg)
 

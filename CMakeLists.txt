@@ -33,16 +33,11 @@ endfunction()
 
 if (WIN32)
   add_definitions(-DUNICODE -D_UNICODE)
-  if(MSVC)
-    add_compile_options("/utf-8")
-  endif()
-elseif(UNIX)
-  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT ANDROID)
-    add_compile_options(-stdlib=libc++)
-    # Presumably need the above for linking too, maybe other options missing as well
-    add_link_options(-stdlib=libc++)   # New command on CMake master, not in 3.12 release
-    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexperimental-library")  # std::format
-  endif()
+endif()
+
+if(MSVC)
+  add_compile_options("/utf-8")
+else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
 
