@@ -19,7 +19,7 @@ namespace WallpaperPlatform {
 namespace fs = std::filesystem;
 using namespace std::literals;
 
-enum class Desktop { WIN, KDE, DDE, GNOME, XFCE, UNKNOWN };
+enum class Desktop { WIN, KDE, CDE, DDE, GNOME, XFCE, UNKNOWN };
 
 inline Desktop GetDesktop() {
 #ifdef _WIN32
@@ -39,6 +39,8 @@ inline Desktop GetDesktop() {
     return Desktop::DDE;
   } else if (nde.find("XFCE") != npos) {
     return Desktop::XFCE;
+  } else if (nde.find("CDE") != npos) {
+    return Desktop::CDE;
   } else {
     return Desktop::UNKNOWN;
   }

@@ -1,3 +1,8 @@
+#include <yjson/yjson.h>
+#include <neobox/menubase.hpp>
+#include <neobox/pluginmgr.h>
+#include <neobox/neomenu.hpp>
+
 #include <wallhavenex.h>
 #include <bingapiex.h>
 #include <directapiex.h>
@@ -6,11 +11,9 @@
 #include <scriptex.h>
 #include <neowallpaperplg.h>
 #include <wallpaper.h>
-#include <yjson/yjson.h>
-#include <neobox/menubase.hpp>
-#include <neobox/pluginmgr.h>
-#include <neobox/neomenu.hpp>
+#include <platform.hpp>
 
+#include <QProcess>
 #include <QString>
 #include <QInputDialog>
 #include <QDesktopServices>
@@ -176,12 +179,47 @@ void PluginName::LoadMainMenuAction()
           mgr->ShowMsg("找不到当前壁纸！");
           return;
         }
-#ifdef _WIN32
-        auto const args = L"/select, " + curImage->wstring();
-        ShellExecuteW(nullptr, L"open", L"explorer", args.c_str(), NULL, SW_SHOWNORMAL);
-#else
-        QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdWString(curImage->wstring())));
-#endif
+        using enum WallpaperPlatform::Desktop;
+        switch (WallpaperPlatform::GetDesktop()) {
+        case WIN:
+          QProcess::startDetached("explorer", {
+            QStringLiteral("/select,"),
+            QString::fromStdWString(curImage->wstring())
+          });
+          break;
+        case KDE:
+          QProcess::startDetached("dolphin", {
+            QStringLiteral("--select"),
+            QString::fromStdWString(L"file:" + curImage->wstring())
+          });
+          break;
+        case CDE:
+          QProcess::startDetached("nemo", {
+            QStringLiteral("--select"),
+            QString::fromStdWString(L"file:" + curImage->wstring())
+          });
+          break;
+        case GNOME:
+          QProcess::startDetached("nautilus", {
+            QStringLiteral("--select"),
+            QString::fromStdWString(L"file:" + curImage->wstring())
+          });
+          break;
+        case XFCE:
+          QProcess::startDetached("thunar", {
+            QStringLiteral("--select"),
+            QString::fromStdWString(L"file:" + curImage->wstring())
+          });
+          break;
+        case DDE:
+          QProcess::startDetached("deepin-file-manager", {
+            QStringLiteral("--select"),
+            QString::fromStdWString(curImage->wstring())
+          });
+          break;
+        default:
+          QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdWString(curImage->wstring())));
+        }
       }, PluginEvent::Void
     }},
   };
