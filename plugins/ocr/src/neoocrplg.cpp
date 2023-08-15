@@ -331,8 +331,8 @@ void NeoOcrPlg::AddTesseractSection(QWidget* parent, QVBoxLayout* layout) {
     for (auto box: chkboxs->buttons() | std::views::filter(std::bind(&QAbstractButton::isChecked, std::placeholders::_1))) {
       object.push_back(QString2Utf8(box->text()));
     }
-    m_Ocr->InitLanguagesList();
     m_Settings.SetLanguages(std::move(object));
+    m_Ocr->InitLanguagesList();
     mgr->ShowMsg("保存成功！");
     parent->close();
   });
