@@ -39,7 +39,7 @@ inline Desktop GetDesktop() {
     return Desktop::DDE;
   } else if (nde.find("XFCE") != npos) {
     return Desktop::XFCE;
-  } else if (nde.find("CDE") != npos) {
+  } else if (nde.find("Cinnamon") != npos) {
     return Desktop::CDE;
   } else {
     return Desktop::UNKNOWN;
@@ -81,7 +81,15 @@ inline std::optional<fs::path> GetWallpaper() {
     std::string_view argStr = "gsettings get org.gnome.desktop.background picture-uri"sv;
     std::list<std::string> result;
     GetCmdOutput(argStr.data(), result);
-    break;
+    std::string_view uri = result.front();
+    return uri.substr(6, uri.size() - 7);
+  }
+  case Desktop::CDE:{
+    std::string_view argStr = "gsettings get org.cinnamon.desktop.background picture-uri"sv;
+    std::list<std::string> result;
+    GetCmdOutput(argStr.data(), result);
+    std::string_view uri = result.front();
+    return uri.substr(6, uri.size() - 7);
   }
   case Desktop::DDE: {
     std::string_view argStr = "dbus-send --session --print-reply --dest=com.deepin.daemon.Appearance /com/deepin/daemon/Appearance com.deepin.daemon.Appearance.GetMonitorBackground"sv;
@@ -160,6 +168,16 @@ inline bool SetWallpaper(fs::path imagePath) {
       }
       break;
       // cmdStr = "gsettings set org.gnome.desktop.background picture-uri \"file:" + imagePath.string();
+    case Desktop::CDE:
+      argStr = std::format("\"file:{}\"", imagePath.string());
+      if (fork() == 0) {
+        execlp(
+          "gsettings", "gsettings",
+          "set", "org.cinnamon.desktop.background", "picture-uri",
+          argStr.c_str(), nullptr
+        );
+      }
+      break;
     case Desktop::DDE:
     /*
       Old deepin:

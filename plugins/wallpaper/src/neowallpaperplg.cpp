@@ -195,8 +195,7 @@ void PluginName::LoadMainMenuAction()
           break;
         case CDE:
           QProcess::startDetached("nemo", {
-            QStringLiteral("--select"),
-            QString::fromStdWString(L"file:" + curImage->wstring())
+            QString::fromStdWString(curImage->wstring())
           });
           break;
         case GNOME:
