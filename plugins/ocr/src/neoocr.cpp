@@ -234,6 +234,10 @@ std::u8string NeoOcr::OcrWindows(const QImage& image)
   std::thread thread([&](){
     // 不知道为啥必须要在另外一个线程里面才能正常运行
     WinOcrGet(Utf82WideString(m_Settings.GetWinLan()), softwareBitmap, result).get();
+    auto pos = result.find_last_not_of(L"\r\n");
+    if (pos != result.npos) {
+      result.erase(++pos);
+    }
   });
   thread.join();
   return Wide2Utf8String(result);
@@ -286,6 +290,10 @@ std::u8string NeoOcr::OcrTesseract(const QImage& image)
   }
   m_TessApi->End();
   delete [] szText;
+  auto pos = result.find_last_not_of(u8"\r\n");
+  if (pos != result.npos) {
+    result.erase(++pos);
+  }
   return result;
 }
 
