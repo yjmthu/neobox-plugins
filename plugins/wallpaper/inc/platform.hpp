@@ -92,7 +92,7 @@ inline std::optional<fs::path> GetWallpaper() {
     return uri.substr(6, uri.size() - 7);
   }
   case Desktop::DDE: {
-    std::string_view argStr = "dbus-send --session --print-reply --dest=com.deepin.daemon.Appearance /com/deepin/daemon/Appearance com.deepin.daemon.Appearance.GetMonitorBackground"sv;
+    // DDE无此功能
     break;
   }
   case Desktop::XFCE: {

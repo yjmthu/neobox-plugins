@@ -43,7 +43,7 @@ void WallhavenData::SaveData() {
 
 void WallhavenData::DownloadUrl(Range range, Callback callback)
 {
-  if (range == m_Range) return;
+  if (m_Request && !m_Request->IsFinished()) return;
 
   m_Range = range;
   m_Index = m_Range.front();
@@ -201,7 +201,7 @@ void Wallhaven::GetNext(Callback callback)
 {
   // https://w.wallhaven.cc/full/1k/wallhaven-1kmx19.jpg
 
-  auto handle = [this, callback](){
+  auto handle = [this, callback]() {
     ImageInfoEx ptr(new ImageInfo);
     m_DataMutex.lock();
     if (!m_Data.m_Unused.empty()) {
