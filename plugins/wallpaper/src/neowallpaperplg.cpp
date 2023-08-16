@@ -202,7 +202,7 @@ void PluginName::LoadMainMenuAction()
         case GNOME:
           QProcess::startDetached("nautilus", {
             QStringLiteral("--select"),
-            QString::fromStdWString(L"file:" + curImage->wstring())
+            QString::fromStdWString(curImage->wstring())
           });
           break;
         case XFCE:

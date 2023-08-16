@@ -35,7 +35,7 @@ inline Desktop GetDesktop() {
     return Desktop::KDE;
   } else if (nde.find("GNOME") != npos) {
     return Desktop::DDE;
-  } else if (nde.find("DDE") != npos) {
+  } else if (nde.find("Deepin") != npos) {
     return Desktop::DDE;
   } else if (nde.find("XFCE") != npos) {
     return Desktop::XFCE;
