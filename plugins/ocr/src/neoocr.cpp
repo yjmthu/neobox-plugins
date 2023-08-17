@@ -17,7 +17,7 @@
 
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
-#include <leptonica/pix_internal.h>
+// #include <leptonica/pix_internal.h>
 
 std::unique_ptr<Pix, void(*)(Pix*)> QImage2Pix(const QImage& qImage);
 namespace fs = std::filesystem;
@@ -72,9 +72,7 @@ NeoOcr::NeoOcr(OcrConfig& settings)
 
 NeoOcr::~NeoOcr()
 {
-#ifdef __linux__
   delete m_TessApi;
-#endif
   std::lock_guard<std::mutex> locker(s_ThreadMutex);
 }
 

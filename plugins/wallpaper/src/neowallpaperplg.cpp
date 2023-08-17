@@ -134,7 +134,7 @@ void PluginName::LoadMainMenuAction()
   auto const menu = new MenuBase(m_MainMenu);
   m_MainMenuAction->setMenu(menu);
 
-  std::vector<std::pair<std::u8string, FunctionInfo>> temp = {
+  static std::vector<std::pair<std::u8string, FunctionInfo>> temp = {
     { u8"prev",
       {u8"上一张图", u8"切换到上一张壁纸", [this](PluginEvent, void*) {
           m_Wallpaper->SetSlot(OperatorType::UNext);
@@ -228,7 +228,7 @@ void PluginName::LoadMainMenuAction()
           Utf82QString(info.friendlyName));
     action->setToolTip(PluginObject::Utf82QString(info.description));
     QObject::connect(action, &QAction::triggered, menu, std::bind(info.function, PluginEvent::Void, nullptr));
-    m_PluginMethod[name] = std::move(info);
+    m_PluginMethod[name] = info;
   }
   
   menu->addAction(m_MoreSettingsAction);

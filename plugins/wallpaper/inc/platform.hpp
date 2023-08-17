@@ -81,13 +81,22 @@ inline std::optional<fs::path> GetWallpaper() {
     std::string_view argStr = "gsettings get org.gnome.desktop.background picture-uri"sv;
     std::list<std::string> result;
     GetCmdOutput(argStr.data(), result);
+    while (!result.empty() && result.front().size() <= 7) {
+      result.pop_front();
+    }
+    if (result.empty()) break;
     std::string_view uri = result.front();
+    if (uri.size() <= 7) break;
     return uri.substr(6, uri.size() - 7);
   }
   case Desktop::CDE:{
     std::string_view argStr = "gsettings get org.cinnamon.desktop.background picture-uri"sv;
     std::list<std::string> result;
     GetCmdOutput(argStr.data(), result);
+    while (!result.empty() && result.front().size() <= 7) {
+      result.pop_front();
+    }
+    if (result.empty()) break;
     std::string_view uri = result.front();
     return uri.substr(6, uri.size() - 7);
   }

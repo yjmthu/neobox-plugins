@@ -23,6 +23,6 @@ def get_data_path():
     return os.path.join(os.path.expanduser('~'), ".config/Neobox/plugins")
 
 if __name__ == '__main__':
-    from_dir = './install/plugins'
+    from_dir = './install'
     to_dir = get_data_path()
     copy_plugins(from_dir, to_dir)
