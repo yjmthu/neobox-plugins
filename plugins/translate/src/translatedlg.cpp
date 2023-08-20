@@ -325,6 +325,12 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
 void NeoTranslateDlg::ToggleVisibility()
 {
   if (isVisible()) {
+    // if (isActiveWindow()) {
+    //   hide();
+    // } else {
+    //   raise();
+    //   show();
+    // }
     hide();
   } else {
     if (m_Settings.GetReadClipboard()) {
