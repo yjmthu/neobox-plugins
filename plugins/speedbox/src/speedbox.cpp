@@ -19,6 +19,8 @@
 #include <neobox/pluginmgr.h>
 #include <neobox/appcode.hpp>
 #include <neobox/pluginobject.h>
+#include <neobox/systemapi.h>
+
 #include <neospeedboxplg.h>
 #include <skinobject.h>
 #include <netspeedhelper.h>
@@ -115,6 +117,7 @@ void SpeedBox::SetWindowMode() {
   setAttribute(Qt::WA_TransparentForMouseEvents, m_Settings.GetMousePenetrate());
   setAttribute(Qt::WA_TranslucentBackground, true);
   setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
+  setStyleSheet("QToolTip{border:1px solid rgb(118, 118, 118);background-color:white;color:black;}");
   setAcceptDrops(true);
 
   auto position = m_Settings.GetPosition();
@@ -212,6 +215,42 @@ void SpeedBox::SetHideFullScreen() {
     0, 0, 0
   };
   SHAppBarMessage(ABM_NEW, reinterpret_cast<APPBARDATA*>(m_AppBarData));
+}
+#else
+bool SpeedBox::IsCurreenWindowFullScreen() {
+  // https://blog.csdn.net/qq_41264992/article/details/126976154
+
+  // 获取窗口的ID
+  auto activeWinCmd =
+      "xprop -root | grep _NET_ACTIVE_WINDOW | head -1 | awk '{print $5}' | sed 's/,//' | sed 's/^0x/0x0/'";
+  std::list<std::string> result;
+  GetCmdOutput(activeWinCmd, result);
+  if (result.empty()) return false;
+  auto activeWinId = result.back();
+  result.clear();
+
+  // 异常ID过滤
+  if (activeWinId == "0x00") {
+    return false;
+  }
+
+  // 获取屏幕尺寸
+  auto screenGeoInfoCmd = "xwininfo -root | awk -F'[ +]' '$3 ~ /-geometry/ {print $4}'";
+  GetCmdOutput(screenGeoInfoCmd, result);
+  if (result.empty()) return false;
+  auto screenSize = result.back();
+  result.clear();
+
+  // 根据窗口ID获取窗口信息
+  auto searchWindowCmd = "xwininfo -id  " + activeWinId + " | awk -F'[ +]' '$3 ~ /-geometry/ {print $4}'";
+
+  GetCmdOutput(searchWindowCmd.c_str(), result);
+  if (result.empty()) return false;
+  auto activeWindowSize = result.back();
+  // std::cout << "<" << active_window_info << ":" << screen_info << ">" << std::endl;
+
+  // 窗口状态判断
+  return (activeWindowSize == screenSize);
 }
 #endif
 
@@ -399,6 +438,12 @@ void SpeedBox::InitNetCard()
       m_NetSpeedHelper.UpdateAdaptersAddresses();
       UpdateNetCardMenu();
       count = 10;
+    }
+#else
+    if (IsCurreenWindowFullScreen()) {
+      if (isVisible()) hide();
+    } else {
+      if (!isVisible()) show();
     }
 #endif
     if (!m_CentralWidget) return;

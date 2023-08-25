@@ -56,9 +56,15 @@ void Skin::UpdateText()
   buffer = m_TrafficInfo.FormatSpeed(m_TrafficInfo.bytesDown, m_DownFmt, m_Units);
   m_NetDown->setText(QString::fromStdWString(buffer));
 
-  buffer = std::format(L"CPU {:>3}%  RAM {:>3}%",
+  buffer = std::format(L"CPU {:>3}%  RAM {:>3}%"
+#ifdef __linux__
+    "  SWAP {:>3}%",
+#endif
       static_cast<int>(m_TrafficInfo.cpuUsage * 100),
       static_cast<int>(m_TrafficInfo.memUsage * 100)
+#ifdef __linux__
+      , static_cast<int>(m_TrafficInfo.swapUsage * 100)
+#endif
   );
 
   m_Center->setToolTip(QString::fromStdWString(buffer));
