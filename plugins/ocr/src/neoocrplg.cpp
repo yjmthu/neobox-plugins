@@ -107,8 +107,8 @@ void PluginName::InitFunctionMap() {
           mgr->ShowMsg("取消设置成功！");
           return;
         } else {
-          m_Ocr->SetDataDir(*u8PathNew);
           m_Settings.SetTessdataDir(std::move(*u8PathNew));
+          m_Ocr->SetDataDir(*u8PathNew);
           mgr->ShowMsg("设置数据文件失成功！");
         }
       }, PluginEvent::Void},
