@@ -18,6 +18,7 @@ public:
   uint32_t bytesTotalUp = 0;
   uint32_t bytesTotalDown = 0;
   float memUsage = 0;
+  float swapUsage = 0;
   float cpuUsage = 0;
   float batteryUsage = 0;
   float storageUsage = 0;

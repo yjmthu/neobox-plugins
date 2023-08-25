@@ -210,8 +210,8 @@ void NetSpeedHelper::SetMemInfo() {
   std::string str;
   std::ifstream fs("/proc/meminfo", std::ios::in);
 
-  float ary[2] { 0, 0 };
-  while ((result != 2) && !fs.eof()) {
+  float ary[4] { 0, 0 };
+  while ((result != 4) && !fs.eof()) {
     fs >> str >> buffer;
     if (str == "MemTotal:") {
       ary[0] = buffer;
@@ -219,11 +219,18 @@ void NetSpeedHelper::SetMemInfo() {
     } else if (str == "MemAvailable:") {
       ary[1] = buffer;
       ++result;
+    } else if (str == "SwapTotal:") {
+      ary[2] = buffer;
+      ++result;
+    } else if (str == "SwapFree:") {
+      ary[3] = buffer;
+      ++result;
     }
     fs >> str;
   }
   fs.close();
   m_TrafficInfo.memUsage = 1.0f - ary[1] / ary[0];
+  m_TrafficInfo.swapUsage = 1.0f - ary[3] / ary[2];
   // std::get<0>(m_SysInfo) = 100 - static_cast<uint64_t>(ary[1] / ary[0] * 100);
 }
 
