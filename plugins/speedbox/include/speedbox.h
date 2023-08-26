@@ -65,6 +65,8 @@ protected:
   void LoadCurrentSkin();
 #ifdef _WIN32
   void SetHideFullScreen();
+#else
+  bool IsCurreenWindowFullScreen();
 #endif
   void InitNetCard();
   void UpdateNetCardMenu();

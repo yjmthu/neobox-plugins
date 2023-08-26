@@ -222,7 +222,7 @@ std::u8string BingApi::GetImageName(YJson& imgInfo) {
 
   std::wstring titleUnicode = Utf82WideString(title);
   for (auto& c: titleUnicode) {
-    if ("/\\;:"sv.find(c) != std::wstring::npos) {
+    if (L"/\\;:"sv.find(c) != std::wstring::npos) {
       c = '_';
     }
   }
