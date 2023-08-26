@@ -105,9 +105,7 @@ void PluginName::InitFunctionMap() {
         auto u8PathNew = mgr->m_Menu->GetExistingDirectory("请选择Tessdata数据文件存放位置", u8Path);
         if (!u8PathNew) {
           mgr->ShowMsg("取消设置成功！");
-          return;
         } else {
-          m_Settings.SetTessdataDir(std::move(*u8PathNew));
           m_Ocr->SetDataDir(*u8PathNew);
           mgr->ShowMsg("设置数据文件失成功！");
         }
