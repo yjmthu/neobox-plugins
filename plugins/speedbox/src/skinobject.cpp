@@ -6,6 +6,7 @@ SkinObject::SkinObject(const TrafficInfo& trafficInfo, QWidget* parent)
   , m_Units({L"B", L"K", L"M", L"G", L"T", L"P"})
 {
   m_Center->move(0, 0);
+  m_Center->setToolTip("行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼");
 }
 
 SkinObject::~SkinObject() {

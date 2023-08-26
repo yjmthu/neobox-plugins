@@ -29,7 +29,7 @@
    <string>Form</string>
   </property>
   <property name="toolTip">
-   <string>行動是治癒恐懼的良藥，而猶豫、拖延將不斷滋養恐懼</string>
+   <string/>
   </property>
   <property name="styleSheet">
    <string notr="true">QWidget#center3{
