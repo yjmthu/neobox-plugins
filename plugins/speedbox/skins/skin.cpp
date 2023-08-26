@@ -58,10 +58,10 @@ void Skin::UpdateText()
 
   buffer = std::format(L"CPU {:>3}%  RAM {:>3}%"
 #ifdef __linux__
-    "  SWAP {:>3}%",
+    "  SWAP {:>3}%"
 #endif
-      static_cast<int>(m_TrafficInfo.cpuUsage * 100),
-      static_cast<int>(m_TrafficInfo.memUsage * 100)
+      , static_cast<int>(m_TrafficInfo.cpuUsage * 100)
+      , static_cast<int>(m_TrafficInfo.memUsage * 100)
 #ifdef __linux__
       , static_cast<int>(m_TrafficInfo.swapUsage * 100)
 #endif
