@@ -41,7 +41,7 @@ private:
   std::u8string GetLanguageName(const std::u8string& url);
   static void DownloadFile(std::u8string_view url,
       const std::filesystem::path& path);
-  tesseract::TessBaseAPI* m_TessApi;
+  tesseract::TessBaseAPI* const m_TessApi;
   std::u8string m_Languages;
   std::string m_TrainedDataDir;
 };

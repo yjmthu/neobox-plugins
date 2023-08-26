@@ -17,7 +17,7 @@
 
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
-// #include <leptonica/pix_internal.h>
+#include <leptonica/pix_internal.h>
 
 std::unique_ptr<Pix, void(*)(Pix*)> QImage2Pix(const QImage& qImage);
 namespace fs = std::filesystem;
