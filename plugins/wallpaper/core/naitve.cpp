@@ -107,8 +107,10 @@ bool Native::GetFileList()
   std::queue<fs::path> qDirsToWalk;
   qDirsToWalk.push(curDir);
 
-  while (!qDirsToWalk.empty()) {
+  while (!qDirsToWalk.empty() && target != numbers.cend()) {
     for (auto& iter : fs::directory_iterator(qDirsToWalk.front())) {
+      if (target == numbers.cend())
+        break;
       fs::path path = iter.path();
       if (fs::is_directory(iter.status())) {
         if (bRecursion) {

@@ -7,9 +7,7 @@
 
 #include <regex>
 #include <utility>
-#include <numeric>
 #include <functional>
-#include <array>
 #include <filesystem>
 #include <thread>
 

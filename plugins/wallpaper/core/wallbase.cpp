@@ -1,5 +1,4 @@
 ﻿#include <wallbase.h>
-#include <unordered_set>
 #ifdef _WIN32
 #include <Shlobj.h>
 #endif  // _WIN32

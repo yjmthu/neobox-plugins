@@ -8,7 +8,7 @@
 #include <neobox/pluginexport.cpp>
 
 PluginName::PluginName(YJson& settings)
-  : PluginObject(InitSettings(settings), u8"weatherplg", u8"天气预报")
+  : PluginObject(InitSettings(settings), u8"weather", u8"天气预报")
   , m_Config(settings)
   , m_WeatherDlg(new WeatherDlg(m_Config))
 {

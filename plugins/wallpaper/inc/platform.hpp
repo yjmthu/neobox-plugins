@@ -2,9 +2,8 @@
 
 #include <string>
 #include <filesystem>
-#include <format>
 #include <neobox/systemapi.h>
-#include <list>
+#include <thread>
 
 #ifdef _DEBUG
 #include <iostream>

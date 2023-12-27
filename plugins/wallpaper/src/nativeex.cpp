@@ -134,18 +134,18 @@ void NativeExMenu::RenameApi(QAction* action)
   
 
   auto& jsApiData = m_Data[u8"dirs"];
-  auto iter = jsApiData.find(*newString);
-  if (iter != jsApiData.endO()) {
-    mgr->ShowMsg("不能使用重复昵称");
+  if (jsApiData.find(*newString) != jsApiData.endO()) {
+    mgr->ShowMsg("不能使用重复昵称！");
     return;
   }
   
   if (action->isChecked()) {
     m_Data[u8"curdir"] = *newString;
   }
-  jsApiData.find(oldString)->first = oldString;
+  auto& key = jsApiData.find(oldString)->first;
+  key.swap(*newString);
   SaveSettings();
-  action->setText(QString::fromUtf8(newString->data(), newString->size()));
+  action->setText(QString::fromUtf8(key.data(), key.size()));
 
   mgr->ShowMsg("修改成功！");
 }
