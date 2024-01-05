@@ -24,7 +24,7 @@ struct LanPair {
 class Translate {
 public:
   // enum class Lan { AUTO, ZH_CN, ZH_TW, EN_US, JA_JP, FR_LU, RU_RU, MAX };
-  enum Source { Baidu, Youdao, BingSimple, Iciba, Dictionary, None } m_Source;
+  enum Source { Baidu, Youdao, Google, BingSimple, Iciba, Dictionary, None } m_Source;
   typedef std::vector<std::u8string> LanList;
   typedef std::pair<std::u8string, LanList> LanItem;
   typedef std::vector<LanItem> LanMap;
@@ -47,6 +47,9 @@ public:
       break;
     case Youdao:
       GetResultYoudao(array);
+      break;
+    case Google:
+      GetResultGoogle(array);
       break;
     case BingSimple:
       GetResultBingSimple(array);
@@ -77,11 +80,13 @@ private:
 private:
   void GetResultBaidu(const Utf8Array& text);
   void GetResultYoudao(const Utf8Array& text);
+  void GetResultGoogle(const Utf8Array& text);
   void GetResultBingSimple(const Utf8Array& text);
   void GetResultIciba(const Utf8Array& text);
   void GetResultDictionary(const Utf8Array& text);
 
   void FormatYoudaoResult(const YJson& data);
+  void FormatGoogleResult(const YJson& data);
   void FormatIcibaResult(const YJson& data);
   void FormatDictionaryResult(const YJson& data);
 };

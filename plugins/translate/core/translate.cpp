@@ -108,15 +108,19 @@ std::map<std::u8string, std::u8string> Translate::m_LangNameMap
   {u8"auto",   u8"自动检测"},
   {u8"zh",     u8"中文简体"},
   {u8"zh-CNS", u8"中文简体"},
+  {u8"zh-CN",  u8"中文简体"},
   {u8"cht",    u8"中文繁体"},
+  {u8"zh-TW",  u8"中文繁体"},
   {u8"en",     u8"英语"},
   {u8"ja",     u8"日语"},
   {u8"jp",     u8"日语"},
   {u8"fra",    u8"法语"},
   {u8"fr",     u8"法语"},
+  {u8"de",     u8"德语"},
   {u8"ko",     u8"韩语"},
   {u8"kor",    u8"韩语"},
   {u8"ru",     u8"俄语"},
+  {u8"pt",     u8"葡萄牙语"}
 };
 
 const Translate::LanMaps Translate::m_LanguageCanFromTo
@@ -139,6 +143,18 @@ const Translate::LanMaps Translate::m_LanguageCanFromTo
     {u8"ko",     {u8"auto", u8"zh-CNS"}},
     {u8"fr",     {u8"auto", u8"zh-CNS"}},
     {u8"ru",     {u8"auto", u8"zh-CNS"}},
+  },
+  // https://cloud.google.com/translate/docs/languages?hl=zh-cn
+  Translate::LanMap {  // Google
+    {u8"auto", {u8"zh-CN", u8"en", u8"ja", u8"fr", u8"ru", u8"ko", u8"pt", u8"de"}},
+    {u8"zh-CN", {u8"en", u8"ja", u8"fr", u8"ru", u8"ko", u8"pt", u8"de"}},
+    {u8"en", {u8"zh-CN", u8"ja", u8"fr", u8"ru", u8"ko", u8"pt", u8"de"}},
+    {u8"ja", {u8"zh-CN", u8"en", u8"fr", u8"ru", u8"ko", u8"pt", u8"de"}},
+    {u8"fr", {u8"zh-CN", u8"en", u8"ja", u8"ru", u8"ko", u8"pt", u8"de"}},
+    {u8"ru", {u8"zh-CN", u8"en", u8"ja", u8"fr", u8"ko", u8"pt", u8"de"}},
+    {u8"ko", {u8"zh-CN", u8"en", u8"ja", u8"fr", u8"ru", u8"pt", u8"de"}},
+    {u8"pt", {u8"zh-CN", u8"en", u8"ja", u8"fr", u8"ru", u8"ko", u8"de"}},
+    {u8"de", {u8"zh-CN", u8"en", u8"ja", u8"fr", u8"ru", u8"ko", u8"pt"}},
   },
   Translate::LanMap {
     {u8"auto", {u8"auto"}}
@@ -168,6 +184,7 @@ Translate::Translate(TranslateCfg& setting, Translate::Callback&& callback)
     , m_AllLanPair({
         setting.GetPairBaidu(),
         setting.GetPairYoudao(),
+        setting.GetPairGoogle(),
         std::array<int, 2> {0, 0},
         std::array<int, 2> {0, 0},
         std::array<int, 2> {0, 0},
@@ -316,6 +333,49 @@ void Translate::GetResultYoudao(const Utf8Array& text) {
   m_Request->GetAsync(std::move(callback));
 }
 
+void Translate::GetResultGoogle(const Utf8Array& text) {
+  // https://wiki.freepascal.org/Using_Google_Translate
+  static HttpUrl url(u8"https://translate.googleapis.com/translate_a/single?"sv, {
+    {u8"client", u8"gtx"},
+    {u8"dt", u8"t"},
+    {u8"dj", u8"1"},   // dj=1 makes the response be a JSON Object
+    {u8"sl", u8"en"},
+    {u8"tl", u8"zh-CN"},
+    {u8"q", std::u8string {}},
+  });
+
+  static auto& from = url.parameters[u8"sl"];
+  from = m_LanguageCanFromTo[Google][m_LanPair->f].first;
+  static auto& to = url.parameters[u8"tl"];
+  to = m_LanguageCanFromTo[Google][m_LanPair->f].second[m_LanPair->t];
+
+  static auto& q = url.parameters[u8"q"];
+  q.assign(text.begin, text.end);
+
+  // 这样同时也取消了前一个请求
+  m_Request = std::make_unique<HttpLib>(url, true, 2s);
+  m_Request->SetHeader(u8"Content-Type", u8"application/json;charset=utf-8");
+  // m_Request->SetHeader(u8"Accept", u8"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+
+  HttpLib::Callback callback = {
+    .m_FinishCallback = [this](auto message, auto res) {
+      if (message.empty() && (res->status / 100 == 2)) {
+        try {
+          FormatGoogleResult(YJson(res->body.begin(), res->body.end()));
+        } catch (std::runtime_error error[[maybe_unused]]) {
+          m_Callback(res->body.data(), res->body.size());
+        }
+      } else {
+        std::wstring msg = std::format(L"error: {}\ncode:{}", message, res->status);
+        auto u8msg = Wide2Utf8String(msg);
+        m_Callback(u8msg.data(), u8msg.size());
+      }
+    }
+  };
+
+  m_Request->GetAsync(std::move(callback));
+}
+
 void Translate::FormatYoudaoResult(const YJson& data) {
   auto const& err = data[u8"errorCode"].getValueString();
   if (err != u8"0") {
@@ -419,6 +479,29 @@ void Translate::FormatYoudaoResult(const YJson& data) {
   auto const view = html.str();
 #endif
   m_Callback(view.data(), view.size());
+}
+
+void Translate::FormatGoogleResult(const YJson& data) {
+  auto& sentences = data[u8"sentences"];
+  if (!sentences.isArray()) {
+    return;
+  }
+  std::u8string buffer;
+  for (auto& item: sentences.getArray()) {
+    auto& trans = item[u8"trans"];
+    if (!trans.isString()) {
+      continue;
+    }
+    if (!buffer.empty()) {
+      buffer.push_back(u8' ');
+    }
+
+    buffer.append(trans.getValueString());
+  }
+  if (buffer.empty()) {
+    buffer = u8"没有找到翻译结果。";
+  }
+  m_Callback(buffer.data(), buffer.size());
 }
 
 void Translate::GetResultBingSimple(const Utf8Array& text) {

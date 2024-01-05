@@ -159,6 +159,11 @@ YJson& PluginName::InitSettings(YJson& settings)
     version = 3;
     settings[u8"HeightRatio"].joinA({180, 180, 180});
   }
+  if (version.getValueInt() == 3) {
+    version = 4;
+    settings[u8"PairGoogle"] = YJson::A {0, 0};
+    settings[u8"HeightRatio"].append(180);
+  }
   return settings;
   // we may not need to call SaveSettings;
 }

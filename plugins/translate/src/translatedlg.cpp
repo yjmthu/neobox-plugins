@@ -358,7 +358,7 @@ void NeoTranslateDlg::SetupUi()
   SetShadowAround(m_CenterWidget);
 
   m_BoxTransMode->addItems({
-    "百度翻译", "有道翻译", "必应翻译", "词霸翻译", "英文词典"
+    "百度翻译", "有道翻译", "谷歌翻译", "必应翻译", "词霸翻译", "英文词典"
   });
 
   m_TextFrom->setObjectName("neoTextFrom");

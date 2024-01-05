@@ -10,6 +10,7 @@ class TranslateCfg: public NeoConfig
   CfgArray(Size)
   CfgArray(PairBaidu)
   CfgArray(PairYoudao)
+  CfgArray(PairGoogle)
   CfgArray(Position)
   CfgYJson(HeightRatio)
   CfgBool(AutoTranslate)
