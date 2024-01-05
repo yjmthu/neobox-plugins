@@ -183,6 +183,10 @@ void NeoTranslateDlg::hideEvent(QHideEvent *event)
       m_Translate->m_AllLanPair[Translate::Youdao].f,
       m_Translate->m_AllLanPair[Translate::Youdao].t
     }, false);
+    m_Settings.SetPairGoogle(YJson::A{
+      m_Translate->m_AllLanPair[Translate::Google].f,
+      m_Translate->m_AllLanPair[Translate::Google].t
+    }, false);
     save = true;
   }
   if (m_HeightCtrl->m_Changed) {
