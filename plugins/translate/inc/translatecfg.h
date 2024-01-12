@@ -17,6 +17,7 @@ class TranslateCfg: public NeoConfig
   CfgBool(ReadClipboard)
   CfgBool(AutoMove)
   CfgBool(AutoSize)
+  CfgBool(AutoDetect)
 };
 
 #endif // TRANSLATECFG_H

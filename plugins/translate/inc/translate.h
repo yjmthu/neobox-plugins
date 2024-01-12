@@ -66,6 +66,8 @@ public:
   void SetSource(Source dict);
   inline Source GetSource() const { return m_Source; }
   std::optional<std::pair<int, int>> ReverseLanguage();
+  bool IsFromEnglish() const;
+  bool IsToEnglish() const;
 
 public:
   const Callback m_Callback;

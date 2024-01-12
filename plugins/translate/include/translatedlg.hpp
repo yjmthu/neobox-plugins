@@ -52,6 +52,7 @@ private:
   void CreateFromRightMenu(QMouseEvent* event);
   void CreateToRightMenu(QMouseEvent* event);
   void AddCombbox(class QHBoxLayout* layout);
+  void AutoDetectLanguage(QUtf8StringView text);
 signals:
   void HttpFinished(QString result);
 private slots:

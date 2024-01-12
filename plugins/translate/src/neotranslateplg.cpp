@@ -110,6 +110,16 @@ void PluginName::InitFunctionMap() {
         }
       }, PluginEvent::Bool}
     },
+    {u8"enableAutoDetect",
+      {u8"自动检测", u8"自动检测语言，一般只支持英语和中文、日语、韩语等非ASCII语言之间的自动转换。", [this](PluginEvent event, void* data) {
+        if (event == PluginEvent::Bool) {
+          m_Settings.SetAutoDetect(*reinterpret_cast<bool*>(data));
+          mgr->ShowMsg("设置成功");
+        } else if (event == PluginEvent::BoolGet) {
+          *reinterpret_cast<bool*>(data) = m_Settings.GetAutoDetect();
+        }
+      }, PluginEvent::Bool}
+    },
   };
 }
 
@@ -163,6 +173,10 @@ YJson& PluginName::InitSettings(YJson& settings)
     version = 4;
     settings[u8"PairGoogle"] = YJson::A {0, 0};
     settings[u8"HeightRatio"].append(180);
+  }
+  if (version.getValueInt() == 4) {
+    version = 5;
+    settings[u8"AutoDetect"] = false;
   }
   return settings;
   // we may not need to call SaveSettings;

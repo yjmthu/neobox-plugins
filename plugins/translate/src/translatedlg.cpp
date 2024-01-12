@@ -94,11 +94,25 @@ NeoTranslateDlg::~NeoTranslateDlg() {
   delete m_TextTo;
 }
 
+void NeoTranslateDlg::AutoDetectLanguage(QUtf8StringView text) {
+  if (text.isEmpty() || !m_Settings.GetAutoDetect()) return;
+
+  auto iter = std::find_if(text.cbegin(), text.cend(), [](char8_t c) {
+    return !isascii(c);
+  });
+  const auto isEnglish = iter == text.cend();
+
+  if (m_Translate->IsFromEnglish() != isEnglish) {
+    ReverseLanguage();
+  }
+}
+
 void NeoTranslateDlg::GetResultData(QUtf8StringView text) {
   if (!m_TextFromChanged) return;
   m_TextTo->clear();
   if (text.size() != 0) {
-     m_Translate->GetResult(text);
+    AutoDetectLanguage(text);
+    m_Translate->GetResult(text);
   }
   m_TextFromChanged = false;
 }
@@ -235,6 +249,7 @@ bool NeoTranslateDlg::eventFilter(QObject* target, QEvent* event) {
               m_TextFrom->insertPlainText("\t");
             } else {
               ReverseLanguage();
+              GetResultData(m_TextFrom->toPlainText().simplified().toUtf8());
               return true;
             }
           }
@@ -379,7 +394,7 @@ void NeoTranslateDlg::SetupUi()
   auto const pButtonGet = new QPushButton("翻译", m_CenterWidget);
   phLayout->addWidget(pButtonGet);
   pvLayout->addLayout(phLayout);
-  connect(pButtonGet, &QPushButton::clicked, this, [this](){
+  connect(pButtonGet, &QPushButton::clicked, this, [this]() {
     GetResultData(m_TextFrom->toPlainText().simplified().toUtf8());
   });
 }
@@ -591,7 +606,10 @@ void NeoTranslateDlg::AddCombbox(QHBoxLayout* layout) {
   ChangeLanguageSource(dict);
   m_LanPairChanged = false;
 
-  connect(m_BtnReverse, &QPushButton::clicked, this, &NeoTranslateDlg::ReverseLanguage);
+  connect(m_BtnReverse, &QPushButton::clicked, this, [this](){
+    ReverseLanguage();
+    GetResultData(m_TextFrom->toPlainText().simplified().toUtf8());
+  });
   connect(m_TextFrom, &QPlainTextEdit::textChanged, this, [this](){m_TextFromChanged = true;});
   connect(m_BoxTransMode, &QComboBox::currentIndexChanged, this, &NeoTranslateDlg::ChangeLanguageSource);
   connect( m_BoxFrom, &QComboBox::currentIndexChanged, this, &NeoTranslateDlg::ChangeLanguageFrom);

@@ -220,6 +220,28 @@ std::optional<std::pair<int, int>> Translate::ReverseLanguage()
   };
 }
 
+bool Translate::IsFromEnglish() const {
+  auto& dict = m_LanguageCanFromTo[m_Source];
+  auto& from = dict[m_LanPair->f].first;
+  if (from == u8"en")
+    return true;
+  if (from != u8"auto")
+    return false;
+  auto& to = dict[m_LanPair->f].second[m_LanPair->t];
+  return to != u8"en";
+}
+
+bool Translate::IsToEnglish() const {
+  auto& dict = m_LanguageCanFromTo[m_Source];
+  auto& to = dict[m_LanPair->f].second[m_LanPair->t];
+  if (to == u8"en")
+    return true;
+  if (to != u8"auto")
+    return false;
+  auto& from = dict[m_LanPair->f].first;
+  return from != u8"en";
+}
+
 inline static std::u8string GetSalt() {
   auto const now = chrono::system_clock::now();
   auto const count = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
