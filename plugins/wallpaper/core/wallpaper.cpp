@@ -9,9 +9,6 @@
 #include <platform.hpp>
 
 #include <wallpaper.h>
-#include <ranges>
-#include <regex>
-#include <unordered_set>
 
 namespace fs = std::filesystem;
 using namespace std::literals;

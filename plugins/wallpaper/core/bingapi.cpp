@@ -1,6 +1,5 @@
 #include <bingapi.h>
 #include <neobox/httplib.h>
-#include <iostream>
 #include <stdexcept>
 #include <wallpaper.h>
 #include <wallbase.h>
