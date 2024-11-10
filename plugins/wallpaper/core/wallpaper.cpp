@@ -108,17 +108,13 @@ std::filesystem::path Wallpaper::Url2Name(const std::u8string& url)
     // url's separator is the '/'.
     imagePath /= url.substr(iter);
   } else {
-    auto fmtStr = m_Settings.GetDropNameFmt();
     auto const extension = url.rfind(u8'.');                       // all url is img file
     auto utc = std::chrono::system_clock::now();
 
-    auto const fmtedName = std::vformat(
-      Utf82WideString(fmtStr + url.substr(extension)),
-      std::make_wformat_args(
-        std::chrono::current_zone()->to_local(utc),
-        Utf82WideString(url.substr(iter, extension - iter))
-      )
-    );
+    auto fmt = Utf82WideString(m_Settings.GetDropNameFmt() + url.substr(extension));
+    auto const time = std::chrono::current_zone()->to_local(utc);
+    auto const name = Utf82WideString(url.substr(iter, extension - iter));
+    auto const fmtedName = std::vformat(fmt, std::make_wformat_args(time, name));
     imagePath.append(fmtedName);
   }
 

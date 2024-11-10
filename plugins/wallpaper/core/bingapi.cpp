@@ -9,10 +9,8 @@
 #include <neobox/neotimer.h>
 
 #include <utility>
-#include <numeric>
 #include <sstream>
 #include <filesystem>
-#include <thread>
 
 namespace fs = std::filesystem;
 namespace chrono = std::chrono;
@@ -226,7 +224,7 @@ std::u8string BingApi::GetImageName(YJson& imgInfo) {
       c = '_';
     }
   }
-  std::wstring result = std::vformat(fmt, 
-    std::make_wformat_args(timePoint, titleUnicode, Utf82WideString(copyright)));
+  auto const & copyrightUnicode = Utf82WideString(copyright);
+  std::wstring result = std::vformat(fmt, std::make_wformat_args(timePoint, titleUnicode, copyrightUnicode));
   return Wide2Utf8String(result);
 }

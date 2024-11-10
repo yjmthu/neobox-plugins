@@ -138,11 +138,13 @@ void Favorite::Dislike(std::u8string_view sImgPath)
     fs::remove(oldPath);
   } else {
 #ifdef _WIN32
-    const auto fmtStr = Utf82AnsiString(m_Setting[u8"NameFormat"].getValueString());
+    const auto fmtStr = Utf82WideString(m_Setting[u8"NameFormat"].getValueString());
+    const auto oldStem = oldPath.stem().wstring();
+    const auto newName = std::vformat(fmtStr, std::make_wformat_args(oldStem)) + oldPath.extension().wstring();
 #else
     const auto fmtStr = Utf8AsString(m_Setting[u8"NameFormat"].getValueString());
-#endif
     const auto newName = std::vformat(fmtStr, std::make_format_args(oldPath.stem().string())) + oldPath.extension().string();
+#endif
     fs::remove(curDir / newName);
   }
 }
@@ -160,8 +162,8 @@ void Favorite::UndoDislike(std::u8string_view sImgPath)
     return;
   }
   const auto fmtStr = Utf82WideString(m_Setting[u8"NameFormat"].getValueString());
-  const auto newName = std::vformat(fmtStr,
-    std::make_wformat_args(oldPath.stem().wstring())) + oldPath.extension().wstring();
+  const auto oldStem = oldPath.stem().wstring();
+  const auto newName = std::vformat(fmtStr, std::make_wformat_args(oldStem)) + oldPath.extension().wstring();
   const auto newPath = curDir / newName;
   if (!fs::exists(newPath) && fs::exists(oldPath)) {
     fs::copy_file(oldPath, newPath);
