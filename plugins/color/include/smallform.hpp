@@ -26,7 +26,7 @@ public:
   static void PickColor(ColorConfig& settings);
 private:
   void SetColor(const QColor& color);
-  void AutoPosition(const QPoint& point);
+  void AutoPosition(QPoint point);
   void QuitHook(bool succeed);
   void ConnectAll(class ColorBack* back);
 public:

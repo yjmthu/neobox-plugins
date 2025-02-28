@@ -33,8 +33,9 @@ void ColorBack::paintEvent(QPaintEvent *event) {
 }
 
 void ColorBack::mouseMoveEvent(QMouseEvent *event) {
+  auto posGlobal = event->globalPosition().toPoint();
   auto pos = event->pos();
-  emit MouseMove(event->pos() + this->pos(), m_Image.pixel(TransformPoint(pos)));
+  emit MouseMove(posGlobal, m_Image.pixel(TransformPoint(pos)));
   event->accept();
 }
 

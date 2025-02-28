@@ -137,10 +137,12 @@ void SmallForm::OnMouseWheel(QWheelEvent *event)
   if (value > 0) {
     if (!m_SquareForm) {
       QPoint leftTop(point.x() - delta, point.y() - delta);
+      leftTop -= m_ScreenFetch->pos();
+      m_ScreenFetch->TransformPoint(leftTop);
       QPoint rightBottom(delta * 2, delta * 2);
       m_ScreenFetch->TransformPoint(rightBottom);
-      QRect rect(m_ScreenFetch->TransformPoint(leftTop), QSize(rightBottom.x(), rightBottom.ry()));
-      m_SquareForm = new SquareForm(m_ScreenFetch->m_Pixmap.copy(rect), point);
+      QRect rect(leftTop, QSize(rightBottom.x(), rightBottom.ry()));
+      m_SquareForm = new SquareForm(m_ScreenFetch->m_Pixmap.copy(rect), point - m_ScreenFetch->pos());
       m_SquareForm->setParent(m_ScreenFetch);
       ConnectAll(m_SquareForm);
       m_SquareForm->show();
@@ -176,24 +178,24 @@ void SmallForm::SetColor(const QColor& color)
   update();
 }
 
-void SmallForm::AutoPosition(const QPoint& point)
+void SmallForm::AutoPosition(QPoint point)
 {
   constexpr int delta = 20;
   auto const w = width(), h = height();
   auto x = 0, y = 0;
 
-  auto rect = m_ScreenFetch->geometry();
+  auto rect = m_ScreenFetch->frameGeometry();
   if (point.y() + delta + h >= rect.bottom()) {
-    y = point.y() - delta - h;
+    point.ry() -= delta + h;
   } else {
-    y = point.y() + delta;
+    point.ry() += delta;
   }
 
   if (point.x() + delta + w >= rect.right()) {
-    x = point.x() - delta - w;
+    point.rx() -= delta + w;
   } else {
-    x = point.x() + delta;
+    point.rx() += delta;
   }
 
-  move(x, y);
+  move(point -= m_ScreenFetch->pos());
 }

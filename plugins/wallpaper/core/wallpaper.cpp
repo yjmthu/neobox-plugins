@@ -130,7 +130,7 @@ void Wallpaper::SetNext() {
       if ((*ptr)->ErrorCode != ImageInfo::NoErr)
         return;
       PushBack(*ptr, std::nullopt);
-    });
+    }).get();
   } else {
     MoveRight();
   }
