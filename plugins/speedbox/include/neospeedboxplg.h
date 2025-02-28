@@ -26,6 +26,7 @@ private:
   void LoadRemoveSkinMenu(MenuBase* parent);
   void LoadChooseSkinMenu(MenuBase* parent);
   void LoadHideAsideMenu(MenuBase* parent);
+  void LoadScreenIndexMenu(MenuBase* parent);
   void AddSkinConnect(class QAction* acion);
   void RemoveSkinConnect(QAction* action);
   void ChooseSkinConnect(QAction* action);

@@ -199,6 +199,7 @@ QAction* PluginName::InitMenuAction()
   AddMainObject(m_Speedbox);   // 添加到对象列表
   this->PluginObject::InitMenuAction();
   LoadHideAsideMenu(m_MainMenu);
+  LoadScreenIndexMenu(m_MainMenu);
 
   m_MainMenu->addSeparator();
   LoadChooseSkinMenu(m_MainMenu);
@@ -265,6 +266,11 @@ YJson& PluginName::InitSettings(YJson& settings)
   if (version.getValueInt() < 2) {
     version = 2;
     settings[u8"TaskbarMode"] = false;
+  }
+
+  if (version.getValueInt() < 3) {
+    version = 3;
+    settings[u8"ScreenIndex"] = 0;
   }
   return settings;
   // we may not need to call SaveSettings;
@@ -434,4 +440,51 @@ void PluginName::AddSkin(const QString& name, const fs::path& path)
   action = m_RemoveSkinMenu->addAction(name);
   RemoveSkinConnect(action);
   mgr->ShowMsg("添加皮肤" + name + "成功！");
+}
+
+void PluginName::LoadScreenIndexMenu(MenuBase* parent)
+{
+  auto menu = new MenuBase(parent);
+  auto group = new QActionGroup(menu);
+  parent->addAction("屏幕选择")->setMenu(menu);
+
+  auto updateMenu = [this, menu, group] () {
+    menu->clear();
+    group->setExclusive(false);
+
+    auto primaryScreen = QGuiApplication::primaryScreen();
+    auto allScreens = QGuiApplication::screens();
+    auto currentScreen = m_Settings.GetScreenIndex();
+    auto primaryIndex = allScreens.indexOf(primaryScreen);
+    if (primaryIndex != -1 && currentScreen >= allScreens.size()) {
+      currentScreen = primaryIndex;
+      m_Speedbox->UpdateScreenIndex(currentScreen);
+    }
+
+    for (int i = 0; i != allScreens.size(); ++i) {
+      auto const geometry = allScreens[i]->geometry();
+      auto const action = menu->addAction("屏幕：" + QString::number(i));
+      action->setCheckable(true);
+      action->setChecked(i == currentScreen);
+      action->setToolTip(QStringLiteral("%1(x: %2, y: %3, w: %4, h: %5)")
+        .arg(allScreens[i]->name())
+        .arg(geometry.x()).arg(geometry.y()).arg(geometry.width()).arg(geometry.height()));
+      group->addAction(action);
+    }
+
+    group->setExclusive(true);
+  };
+
+  updateMenu();
+
+  QObject::connect(group, &QActionGroup::triggered, [this, group](QAction* action){
+    auto lastScreen = m_Settings.GetScreenIndex();
+    if (lastScreen == group->actions().indexOf(action)) return;
+    auto index = group->actions().indexOf(action);
+    m_Speedbox->UpdateScreenIndex(group->actions().indexOf(action));
+    mgr->ShowMsg("设置成功！");
+  });
+
+  QObject::connect(qApp, &QGuiApplication::screenAdded, updateMenu);
+  QObject::connect(qApp, &QGuiApplication::screenRemoved, updateMenu);
 }

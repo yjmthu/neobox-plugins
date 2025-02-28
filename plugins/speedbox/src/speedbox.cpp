@@ -27,9 +27,7 @@
 #include <processform.h>
 #include <trayframe.h>
 
-#include <array>
 #include <filesystem>
-#include <ranges>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -70,6 +68,7 @@ SpeedBox::SpeedBox(NeoSpeedboxPlg* plugin, SpeedBoxCfg& settings, MenuBase* netc
 #ifdef _WIN32
   SetHideFullScreen();
 #endif
+  LoadScreen(m_Settings.GetScreenIndex());
   LoadCurrentSkin();
   InitNetCard();
 }
@@ -120,8 +119,8 @@ void SpeedBox::SetWindowMode() {
   setStyleSheet("QToolTip{border:1px solid rgb(118, 118, 118);background-color:white;color:black;}");
   setAcceptDrops(true);
 
-  auto position = m_Settings.GetPosition();
-  move(position.front().getValueInt(), position.back().getValueInt());
+  auto p = m_Settings.GetPosition();
+  move(p.front().getValueInt(), p.back().getValueInt());
 }
 
 void SpeedBox::UpdateSkin()
@@ -365,18 +364,18 @@ bool SpeedBox::nativeEvent(const QByteArray& eventType,
 static constexpr int delta = 1;
 
 void SpeedBox::enterEvent(QEnterEvent* event) {
-  auto rtScreen = QGuiApplication::primaryScreen()->geometry();
+  auto const& rtScreen = m_ScreenGeometry;
   auto rtForm = this->frameGeometry();
   m_Animation->setStartValue(rtForm);
   switch (m_HideSide) {
     case HideSide::Left:
-      rtForm.moveTo(-delta, rtForm.y());
+      rtForm.moveTo(rtScreen.left() - delta, rtForm.y());
       break;
     case HideSide::Right:
       rtForm.moveTo(rtScreen.right() - rtForm.width() + delta, rtForm.y());
       break;
     case HideSide::Top:
-      rtForm.moveTo(rtForm.x(), -delta);
+      rtForm.moveTo(rtForm.x(), rtScreen.top() - delta);
       break;
     case HideSide::Bottom:
       rtForm.moveTo(rtForm.x(), rtScreen.bottom() - rtForm.height() + delta);
@@ -391,7 +390,7 @@ void SpeedBox::enterEvent(QEnterEvent* event) {
 }
 
 void SpeedBox::leaveEvent(QEvent* event) {
-  auto rtScreen = QGuiApplication::primaryScreen()->geometry();
+  auto const& rtScreen = m_ScreenGeometry;
   auto rtForm = this->frameGeometry();
   m_Animation->setStartValue(rtForm);
   auto const hideBits = m_Settings.GetHideAside();
@@ -400,10 +399,10 @@ void SpeedBox::leaveEvent(QEvent* event) {
     rtForm.moveTo(rtScreen.right() - delta, rtForm.y());
   } else if ((HideSide::Left & hideBits)  && rtForm.left() - delta <= rtScreen.left()) {
     m_HideSide = HideSide::Left;
-    rtForm.moveTo(delta - rtForm.width(), rtForm.y());
+    rtForm.moveTo(rtScreen.left() + delta - rtForm.width(), rtForm.y());
   } else if ((HideSide::Top & hideBits) && rtForm.top() - delta <= rtScreen.top()) {
     m_HideSide = HideSide::Top;
-    rtForm.moveTo(rtForm.x(), delta - rtForm.height());
+    rtForm.moveTo(rtForm.x(), rtScreen.top() + delta - rtForm.height());
   } else if ((HideSide::Bottom & hideBits) && rtForm.bottom() + delta >= rtScreen.bottom()) {
     m_HideSide = HideSide::Bottom;
     rtForm.moveTo(rtForm.x(), rtScreen.bottom() - delta);
@@ -419,14 +418,42 @@ void SpeedBox::leaveEvent(QEvent* event) {
 
 void SpeedBox::InitMove()
 {
-  move(100, 100);
+  LoadScreen(m_Settings.GetScreenIndex());
+
+  auto pos = m_ScreenGeometry.topLeft() + QPoint(100, 100);
+  move(pos);
+
   m_HideSide = HideSide::None;
-  m_Settings.SetPosition(YJson::A{100, 100});
+  m_Settings.SetPosition(YJson::A { pos.x(), pos.y() } );
   if (!isVisible())
     show();
   mgr->ShowMsg("移动成功！");
 }
 
+void SpeedBox::LoadScreen(int index) {
+  auto screens = QGuiApplication::screens();
+  if (screens.empty()) {
+    mgr->ShowMsg("无法获取屏幕信息！");
+    return;
+  }
+  if (index >= screens.size()) {
+    m_ScreenGeometry = QGuiApplication::primaryScreen()->geometry();
+  } else {
+    m_ScreenGeometry = screens[index]->geometry();
+  }
+}
+
+void SpeedBox::UpdateScreenIndex(int index)
+{
+  LoadScreen(index);
+
+  auto pos = m_ScreenGeometry.topLeft() + QPoint(100, 100);
+  move(pos);
+  m_Settings.SetPosition(YJson::A { pos.x(), pos.y() }, false);
+
+  m_Settings.SetScreenIndex(index);
+  mgr->ShowMsg("切换屏幕成功！");
+}
 
 void SpeedBox::InitNetCard()
 {

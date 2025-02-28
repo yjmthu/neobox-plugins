@@ -23,6 +23,8 @@ private:
   class TrayFrame* m_TrayFrame;
   class MenuBase& m_NetCardMenu;
   void* m_AppBarData;
+
+  QRect m_ScreenGeometry;
   class NetSpeedHelper& m_NetSpeedHelper;
   class ProcessForm* m_ProcessForm;
   std::string m_MemFrameStyle;
@@ -58,11 +60,13 @@ protected:
   void UpdateSkin();
   void SetProgressMonitor(bool on);
   void SetTrayMode(bool on);
+  void UpdateScreenIndex(int index);
 
  private:
   void SetWindowMode();
   bool LoadDll(fs::path dllPath);
   void LoadCurrentSkin();
+  void LoadScreen(int index);
 #ifdef _WIN32
   void SetHideFullScreen();
 #else
