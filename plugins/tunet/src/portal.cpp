@@ -81,6 +81,10 @@ std::optional<YJson> Portal::ParseJson(HttpResponse* res) {
 }
 
 HttpAction<Portal::Error> Portal::Init(std::u8string username, std::u8string password) {
+  if (userInfo.IsInfoValid() && username == userInfo.username && password == userInfo.password) {
+    co_return Error::NoError;
+  }
+
   userInfo.username = std::move(username);
   userInfo.password = std::move(password);
   
@@ -180,9 +184,8 @@ HttpAwaiter<> Portal::GetInfo() {
 }
 
 HttpAction<Portal::Error> Portal::Login() {
-  if (userInfo.ip.empty()) {
-    std::cerr << "Network not found.\n";
-    co_return Error::NetworkError;
+  if (!userInfo.IsInfoValid()) {
+    co_return Error::UserInfoError;
   }
   std::cout << "ip: " << std::string(userInfo.ip.begin(), userInfo.ip.end()) << std::endl;
   auto info = co_await GetInfo();
@@ -214,7 +217,6 @@ HttpAction<Portal::Error> Portal::Login() {
 }
 
 HttpAction<Portal::Error> Portal::Logout() {
-
   if (!userInfo.isLogin) {
     std::cout << "Already logout\n";
     co_return Error::AlreadyLogout;
@@ -222,9 +224,8 @@ HttpAction<Portal::Error> Portal::Logout() {
 
   userInfo.isLogin = false;
 
-  if (userInfo.ip.empty()) {
-    std::cerr << "Network not found.\n";
-    co_return Error::NetworkError;
+  if (!userInfo.IsInfoValid()) {
+    co_return Error::UserInfoError;
   }
 
   // current time in date

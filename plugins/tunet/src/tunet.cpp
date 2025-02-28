@@ -26,15 +26,7 @@ PluginName::PluginName(YJson& settings)
   // LoadResources();
   InitFunctionMap();
 
-  m_Portal->Init(m_Settings->GetUsername(), m_Settings->GetPassword()).then([this](auto err) {
-    if (err == std::nullopt) {
-      mgr->ShowMsg("校园网插件初始化失败，请联系插件开发者。");
-    } else if (*err != Portal::Error::NoError) {
-      std::cerr << "Init error: " << static_cast<int>(*err) << std::endl;
-    } else {
-      m_Inited = true;
-    }
-  }).get();
+  if (m_Settings->GetAutoLogin()) LogInOut(true, true);
 }
 
 PluginName::~PluginName()
@@ -48,77 +40,12 @@ void PluginName::InitFunctionMap() {
   m_PluginMethod = {
     {u8"login",
       {u8"登录网络", u8"登录清华大学校园网", [this](PluginEvent, void*) {
-        if (!m_Inited) {
-          mgr->ShowMsg("请等待初始化完成。");
-          return;
-        }
-        m_Portal->Login().then([this](auto err) {
-          if (err == std::nullopt) {
-            mgr->ShowMsg("登录失败，请联系插件开发者。");
-          } else if (*err != Portal::Error::NoError) {
-            std::cerr << "Login error: " << static_cast<int>(*err) << std::endl;
-            switch (*err) {
-            case Portal::Error::AlreadyLogin:
-              mgr->ShowMsg("已经登录。");
-              break;
-            case Portal::Error::NetworkError:
-              mgr->ShowMsg("网络错误。");
-              break;
-            case Portal::Error::UserInfoError:
-              mgr->ShowMsg("用户信息错误。");
-              break;
-            case Portal::Error::ParseError:
-              mgr->ShowMsg("解析错误。");
-              break;
-            case Portal::Error::TokenError:
-              mgr->ShowMsg("获取Token失败。");
-              break;
-            case Portal::Error::AuthError:
-              mgr->ShowMsg("认证失败。");
-              break;
-            default:
-              mgr->ShowMsg("其他错误");
-            }
-          }
-        });
+        LogInOut(true, false);
       }, PluginEvent::Void},
     },
     {u8"logout",
       {u8"登出网络", u8"登出清华大学校园网", [this](PluginEvent, void*) {
-        if (!m_Inited) {
-          mgr->ShowMsg("请等待初始化完成。");
-          return;
-        }
-        m_Portal->Logout().then([this](auto err) {
-          if (err == std::nullopt) {
-            mgr->ShowMsg("注销失败，请联系插件开发者。");
-          } else if (*err != Portal::Error::NoError) {
-            switch (*err) {
-            case Portal::Error::AlreadyLogout:
-              mgr->ShowMsg("已经注销。");
-              break;
-            case Portal::Error::NetworkError:
-              mgr->ShowMsg("网络错误。");
-              break;
-            case Portal::Error::UserInfoError:
-              mgr->ShowMsg("用户信息错误。");
-              break;
-            case Portal::Error::ParseError:
-              mgr->ShowMsg("解析错误。");
-              break;
-            case Portal::Error::TokenError:
-              mgr->ShowMsg("获取Token失败。");
-              break;
-            case Portal::Error::AuthError:
-              mgr->ShowMsg("认证失败。");
-              break;
-            default:
-              mgr->ShowMsg("其他错误");
-            }
-          } else {
-            mgr->ShowMsg("登出成功。");
-          }
-        });
+        LogInOut(false, false);
       }, PluginEvent::Void},
     },
     {u8"autoLogin",
@@ -135,25 +62,19 @@ void PluginName::InitFunctionMap() {
       {u8"设置用户名", u8"设置清华大学校园网用户名", [this](PluginEvent, void*) {
         auto const username = m_Settings->GetUsername();
         auto result = mgr->m_Menu->GetNewU8String("输入", "输入用户名", username);
-        if (!result) return;
-
-        if (*result != username) {
-          m_Settings->SetUsername(*result);
-        }
+        if (result == std::nullopt) return;
+        m_Settings->SetUsername(*result);
         mgr->ShowMsg("保存成功！");
-      }, PluginEvent::String},
+      }, PluginEvent::Void},
     },
     {u8"setPassword",
       {u8"设置密码", u8"设置清华大学校园网密码", [this](PluginEvent, void*) {
         auto const password = m_Settings->GetPassword();
         auto result = mgr->m_Menu->GetNewU8String("输入", "输入密码", password);
-        if (!result) return;
-
-        if (*result != password) {
-          m_Settings->SetPassword(*result);
-        }
+        if (result == std::nullopt) return;
+        m_Settings->SetPassword(*result);
         mgr->ShowMsg("保存成功！");
-      }, PluginEvent::String},
+      }, PluginEvent::Void},
     },
   };
 }
@@ -173,7 +94,7 @@ QAction* PluginName::LoadMainMenuAction()
 {
   auto names = {u8"login", u8"logout"};
 
-  m_MainMenuAction = new QAction("清华校园网");
+  m_MainMenuAction = new QAction("校园网络");
   auto const menu = new MenuBase(m_MainMenu);
   m_MainMenuAction->setMenu(menu);
 
@@ -195,3 +116,63 @@ QAction* PluginName::InitMenuAction()
   return LoadMainMenuAction();
 }
 
+void PluginName::ShowMsg(Portal::Error err, const char* showSucc) {
+  switch (err) {
+  case Portal::Error::NoError:
+    if (showSucc) mgr->ShowMsg(showSucc);
+    break;
+  case Portal::Error::AlreadyLogin:
+    if (showSucc) mgr->ShowMsg("已经登录。");
+    break;
+  case Portal::Error::AlreadyLogout:
+    if (showSucc) mgr->ShowMsg("已经注销。");
+    break;
+  case Portal::Error::NetworkError:
+    mgr->ShowMsg("网络错误。");
+    break;
+  case Portal::Error::UserInfoError:
+    mgr->ShowMsg("用户信息错误。");
+    break;
+  case Portal::Error::ParseError:
+    mgr->ShowMsg("解析错误。");
+    break;
+  case Portal::Error::TokenError:
+    mgr->ShowMsg("获取Token失败。");
+    break;
+  case Portal::Error::AuthError:
+    mgr->ShowMsg("认证失败。");
+    break;
+  default:
+    mgr->ShowMsg("其他错误");
+  }
+}
+
+HttpAction<void> PluginName::LogInOut(bool login, bool silent) {
+  auto c = m_Portal->Init(m_Settings->GetUsername(), m_Settings->GetPassword());
+  auto res = co_await c.awaiter();
+
+  if (res == std::nullopt) {
+    mgr->ShowMsg("初始化失败，请联系开发者。");
+    co_return;
+  }
+
+  ShowMsg(*res, silent ? nullptr : "初始化成功。");
+  if (*res != Portal::NoError) {
+    co_return;
+  }
+
+  if (login)
+    res = co_await m_Portal->Login().awaiter();
+  else
+    res = co_await m_Portal->Logout().awaiter();
+  
+  if (res == std::nullopt) {
+    mgr->ShowMsg(login ? "登入失败，请联系开发者。" : "登出失败，请联系开发者。");
+    co_return;
+  }
+
+  ShowMsg(*res, silent ? nullptr : (login ? "登入成功。" : "登出成功。"));
+  if (*res != Portal::NoError) {
+    co_return;
+  }
+}

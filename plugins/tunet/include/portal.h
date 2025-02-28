@@ -42,6 +42,10 @@ private:
     std::u8string domain;
     std::u8string ip;
     bool isLogin = false;
+
+    bool IsInfoValid() const {
+      return !(username.empty() || password.empty() || acID.empty() || ip.empty());
+    }
   } userInfo;
 
   typedef std::function<void(std::u8string)> Callback;

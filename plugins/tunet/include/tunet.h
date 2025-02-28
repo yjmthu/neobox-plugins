@@ -4,6 +4,8 @@
 #include <neobox/pluginobject.h>
 #include <atomic>
 
+#include <portal.h>
+
 class Thunet: public PluginObject
 {
 public:
@@ -13,13 +15,14 @@ private:
   void InitFunctionMap() override;
   class QAction* InitMenuAction() override;
   QAction* LoadMainMenuAction();
-  // static void LoadResources();
+  void ShowMsg(Portal::Error err, const char* showSucc);
+  HttpAction<void> LogInOut(bool login, bool silent);
   // static void SetDesktopRightMenu(bool on);
   // static bool HasDesktopRightMenu();
-  std::atomic_bool m_Inited = false;
+  // std::atomic_bool m_Inited = false;
   YJson& InitSettings(YJson& settings);
   class TuNetCfg* const m_Settings;
-  class Portal* const m_Portal;
+  Portal* const m_Portal;
   QAction* m_MainMenuAction;
 };
 

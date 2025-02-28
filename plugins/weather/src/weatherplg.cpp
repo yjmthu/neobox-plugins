@@ -40,8 +40,10 @@ void PluginName::InitFunctionMap()
         
         if (*result != key) {
           m_Config.SetApiKey(*result);
+          mgr->ShowMsg("保存成功！");
+        } else {
+          mgr->ShowMsg("未保存！");
         }
-        mgr->ShowMsg("保存成功！");
       }, PluginEvent::Void}
     },
     {u8"clearApiKey",
