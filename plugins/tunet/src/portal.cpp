@@ -10,7 +10,7 @@
 
 using namespace std::literals;
 
-static std::ostream& operator<<(std::ostream& os, std::u8string_view res) {
+static std::ostream& operator<<(std::ostream& os, const std::u8string& res) {
   os.write(reinterpret_cast<const char*>(res.data()), res.size());
   return os;
 }
@@ -80,7 +80,7 @@ std::optional<YJson> Portal::ParseJson(HttpResponse* res) {
   return YJson(data.begin() + i, data.begin() + j + 1);
 }
 
-HttpAction<void> Portal::Init(std::u8string username, std::u8string password) {
+HttpAction<Portal::Error> Portal::Init(std::u8string username, std::u8string password) {
   userInfo.username = std::move(username);
   userInfo.password = std::move(password);
   
@@ -90,7 +90,7 @@ HttpAction<void> Portal::Init(std::u8string username, std::u8string password) {
 
   if (res->status != 200) {
     std::cerr << "Can not go to <" << client.GetUrl() << ">\n";
-    co_return;
+    co_return Error::NetworkError;
   }
 
   // std::cout << res->body << std::endl;
@@ -101,7 +101,7 @@ HttpAction<void> Portal::Init(std::u8string username, std::u8string password) {
     res = co_await client.GetAsync();
     if (res->status != 200) {
       std::cerr << "Can not go to <" << client.GetUrl() << ">\n";
-      co_return;
+      co_return Error::NetworkError;
     }
   }
 
@@ -121,11 +121,11 @@ HttpAction<void> Portal::Init(std::u8string username, std::u8string password) {
     );
     if (res->status != 200) {
       std::cerr << "Can not go to <" << client.GetUrl() << ">\n";
-      co_return;
+      co_return Error::NetworkError;
     }
   } else {
     std::cerr << "Can not find ac_id.\n";
-    co_return;
+    co_return Error::ParseError;
   }
 
   // std::cout << res->body << std::endl;
@@ -133,11 +133,15 @@ HttpAction<void> Portal::Init(std::u8string username, std::u8string password) {
     auto config = search.view(1);
     if (search.match_view(config, R"(ip\s*:\s*"([^"]+)\")")) {
       userInfo.ip = search.view(1);
+      std::cout << "Find ip: " << userInfo.ip << std::endl;
+      co_return Error::NoError;
     } else {
       std::cerr << "Can not find ip.\n";
+      co_return Error::ParseError;
     }
   } else {
     std::cerr << "Can not find CONFIG.\n";
+    co_return Error::ParseError;
   }
 }
 
@@ -175,16 +179,16 @@ HttpAwaiter<> Portal::GetInfo() {
   return client.GetAsync(std::move(cb));
 }
 
-HttpAction<void> Portal::Login() {
+HttpAction<Portal::Error> Portal::Login() {
   if (userInfo.ip.empty()) {
     std::cerr << "Network not found.\n";
-    co_return;
+    co_return Error::NetworkError;
   }
   std::cout << "ip: " << std::string(userInfo.ip.begin(), userInfo.ip.end()) << std::endl;
   auto info = co_await GetInfo();
   if (userInfo.isLogin) {
     std::cout << "Already login\n";
-    co_return;
+    co_return Error::AlreadyLogin;
   }
   userInfo.isLogin = true;
 
@@ -193,32 +197,34 @@ HttpAction<void> Portal::Login() {
 
   if (!json) {
     std::cerr << "Can not get token.\n";
-    co_return;
+    co_return Error::TokenError;
   }
 
   res = co_await SendAuth(ParseToken(*json));
   json = ParseJson(res);
   
   if (!json) {
-    std::cerr << "Can not get token.\n";
-    co_return;
+    std:: cerr << "Can not auth.\n";
+    co_return Error::AuthError;
   }
 
   std::cout << *json << std::endl;
+
+  co_return Error::NoError;
 }
 
-HttpAction<void> Portal::Logout() {
+HttpAction<Portal::Error> Portal::Logout() {
 
   if (!userInfo.isLogin) {
     std::cout << "Already logout\n";
-    co_return;
+    co_return Error::AlreadyLogout;
   }
 
   userInfo.isLogin = false;
 
   if (userInfo.ip.empty()) {
     std::cerr << "Network not found.\n";
-    co_return;
+    co_return Error::NetworkError;
   }
 
   // current time in date
@@ -251,6 +257,12 @@ HttpAction<void> Portal::Logout() {
   auto res = co_await client.GetAsync(std::move(cb));
   
   std::cout << res->body << std::endl;
+  if (res->status != 200) {
+    std::cerr << "Can not logout.\n";
+    co_return Error::NetworkError;
+  }
+
+  co_return Error::NoError;
 }
 
 HttpAwaiter<> Portal::SendAuth(std::u8string_view token) {

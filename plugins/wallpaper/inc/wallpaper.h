@@ -1,15 +1,10 @@
 #pragma once
 
-#include <deque>
 #include <filesystem>
-#include <fstream>
-#include <iostream>
 #include <list>
-#include <memory>
 #include <queue>
 #include <stack>
 #include <string>
-#include <vector>
 #include <functional>
 
 #include <wallbase.h>

@@ -23,6 +23,17 @@ public:
     // std::lock_guard<Mutex> lock(mtx);
   }
 
+  enum Error {
+    NoError,
+    AlreadyLogin,
+    AlreadyLogout,
+    NetworkError,
+    UserInfoError,
+    ParseError,
+    TokenError,
+    AuthError,
+  };
+
 private:
   struct UserInfo {
     std::u8string acID;
@@ -45,9 +56,9 @@ private:
   HttpLib client;
 
 public:
-  HttpAction<void> Init(std::u8string username, std::u8string password);
-  HttpAction<void> Login();
-  HttpAction<void> Logout();
+  HttpAction<Error> Init(std::u8string username, std::u8string password);
+  HttpAction<Error> Login();
+  HttpAction<Error> Logout();
 
   HttpAwaiter<> GetInfo();
   HttpAwaiter<> SendAuth(std::u8string_view token);
