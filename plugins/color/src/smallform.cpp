@@ -57,14 +57,11 @@ SmallForm::~SmallForm()
 void SmallForm::ConnectAll(class ColorBack* back)
 {
   connect(back, &ScreenFetch::InitShow, this, [this]() {
-    QPoint pos = QCursor::pos();
-    pos -= m_ScreenFetch->pos();
-    AutoPosition(pos);
+    AutoPosition(QCursor::pos());
     show();
     activateWindow();
   });
   connect(back, &ScreenFetch::MouseMove, this, [this](QPoint pos, QColor col) {
-    pos -= m_ScreenFetch->pos();
     AutoPosition(pos);
     SetColor(col);
   });
@@ -182,19 +179,21 @@ void SmallForm::SetColor(const QColor& color)
 void SmallForm::AutoPosition(const QPoint& point)
 {
   constexpr int delta = 20;
-  auto frame = frameGeometry();
-  QPoint destination = frame.topLeft();
+  auto const w = width(), h = height();
+  auto x = 0, y = 0;
 
-  if (point.y() + delta + frame.height() >= m_ScreenFetch->height()) {
-    destination.ry() = point.y() - delta - frame.height();
+  auto rect = m_ScreenFetch->geometry();
+  if (point.y() + delta + h >= rect.bottom()) {
+    y = point.y() - delta - h;
   } else {
-    destination.ry() = point.y() + delta;
+    y = point.y() + delta;
   }
 
-  if (point.x() + delta + frame.width() >= m_ScreenFetch->width()) {
-    destination.rx() = point.x() - delta - frame.width();
+  if (point.x() + delta + w >= rect.right()) {
+    x = point.x() - delta - w;
   } else {
-    destination.rx() = point.x() + delta;
+    x = point.x() + delta;
   }
-  move(destination);
+
+  move(x, y);
 }

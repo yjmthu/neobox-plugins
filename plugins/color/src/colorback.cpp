@@ -7,7 +7,7 @@
 ColorBack::ColorBack(QPixmap pixmap)
   : QWidget(nullptr)
   , m_Pixmap(pixmap)
-  , m_Image(pixmap.toImage())
+  , m_Image(m_Pixmap.toImage())
 {}
 
 ColorBack::~ColorBack()

@@ -8,8 +8,6 @@
 #include <QMouseEvent>
 #include <QTimer>
 
-#include <iostream>
-
 constexpr int SquareForm::m_BorderWidth;
 
 class ColorBigger: public QWidget
