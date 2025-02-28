@@ -19,7 +19,7 @@ using namespace std::literals;
 BingApi::BingApi(YJson& setting)
   : WallBase(InitSetting(setting))
   , m_Data(nullptr)
-  , m_Timer(new NeoTimer)
+  , m_Timer(NeoTimer::New())
 {
   InitData();
   AutoDownload();
@@ -28,7 +28,7 @@ BingApi::BingApi(YJson& setting)
 BingApi::~BingApi()
 {
   m_QuitFlag = true;
-  delete m_Timer;
+  m_Timer->Destroy();
   delete m_Data;
 }
 

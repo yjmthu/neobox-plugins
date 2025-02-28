@@ -22,7 +22,7 @@ Wallpaper::Wallpaper(YJson& settings)
   : m_Settings(settings)
   , m_Config(GetConfigData())
   , m_Wallpaper(WallBase::Initialize(*m_Config))
-  , m_Timer(new NeoTimer)
+  , m_Timer(NeoTimer::New())
   , m_Favorites(WallBase::GetInstance(WallBase::FAVORITE))
   , m_BingWallpaper(WallBase::GetInstance(WallBase::BINGAPI))
 {
@@ -33,7 +33,7 @@ Wallpaper::Wallpaper(YJson& settings)
 }
 
 Wallpaper::~Wallpaper() {
-  delete m_Timer;
+  m_Timer->Destroy();
 
   DownloadJob::ClearPool();
   
@@ -366,7 +366,7 @@ void Wallpaper::SetAutoChange(bool flag) {
   m_Settings.SetAutoChange(flag);
   // m_Settings.SaveData();
   if (flag) {
-    m_Timer->ResetTime(
+    m_Timer->StartTimer(
       std::chrono::minutes(m_Settings.GetTimeInterval()),
         std::bind(&Wallpaper::SetSlot, this, OperatorType::Next));
   }
@@ -378,11 +378,11 @@ void Wallpaper::SetFirstChange(bool flag) {
   m_DataMutex.unlock();
 
   if (flag) {
-    auto const timer = new NeoTimer;
+    auto const timer = NeoTimer::New();
     timer->StartTimer(15s, [this, timer](){
       SetNext();
       // 不阻塞工作线程才能顺利析构
-      std::thread([timer](){ delete timer; }).detach();
+      std::thread([timer](){ timer->Destroy(); }).detach();
     });
   }
 }
