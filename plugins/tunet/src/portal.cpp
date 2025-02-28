@@ -15,6 +15,11 @@ static std::ostream& operator<<(std::ostream& os, const std::u8string& res) {
   return os;
 }
 
+static std::ostream& operator<<(std::ostream& os, std::u8string_view res) {
+  os.write(reinterpret_cast<const char*>(res.data()), res.size());
+  return os;
+}
+
 template <typename Char>
 static std::u8string operator+(std::u8string a, std::basic_string_view<Char> b) {
   return a.append(b.begin(), b.end());
@@ -98,9 +103,9 @@ HttpAction<Portal::Error> Portal::Init(std::u8string username, std::u8string pas
   }
 
   // std::cout << res->body << std::endl;
-  if (search.match_view(res->body, R"(URL=(https://[^"]*_\d+\.html))")) {
-    std::cout << "Find URL\n";
-    auto url = search.view(1);
+  if (search.match_view(res->body, R"((URL|href)="?(https://.+?index_\d+\.html))")) {
+    std::cout << "Find URL: <" << search.view(0) << ">\n";
+    auto url = search.view(2);
     client.SetUrl(url);
     res = co_await client.GetAsync();
     if (res->status != 200) {
