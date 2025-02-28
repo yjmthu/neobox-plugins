@@ -94,3 +94,10 @@ void ScreenFetch::keyPressEvent(QKeyEvent* event) {
       break;
   }
 }
+
+void ScreenFetch::leaveEvent(QEvent *event) {
+  auto const screen = QGuiApplication::screenAt(QCursor::pos());
+  m_PixMap = screen->grabWindow();
+  m_Image = m_PixMap.toImage();
+  setGeometry(screen->geometry());
+}

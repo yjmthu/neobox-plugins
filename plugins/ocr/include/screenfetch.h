@@ -10,6 +10,7 @@ class ScreenFetch : public QWidget {
   void mouseMoveEvent(QMouseEvent* event) override;
   void paintEvent(QPaintEvent* event) override;
   void keyPressEvent(QKeyEvent* event) override;
+  void leaveEvent(QEvent *event) override;
 
  public:
   explicit ScreenFetch(QImage& image, QWidget* parent = nullptr);
@@ -22,7 +23,7 @@ class ScreenFetch : public QWidget {
   uint8_t m_bFirstClicked = 0;
   bool m_bHaveCatchImage = false;
   QPoint m_LeftTop, m_RectSize;
-  const QPixmap m_PixMap;
+  QPixmap m_PixMap;
 };
 
 #endif
