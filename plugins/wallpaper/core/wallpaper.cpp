@@ -125,10 +125,12 @@ void Wallpaper::SetNext() {
   m_DataMutex.unlock();
 
   if (ok) {
-    m_Wallpaper->GetNext(
-      std::bind(&Wallpaper::PushBack,
-        this, std::placeholders::_1, std::nullopt)
-    );
+    m_Wallpaper->GetNext().then([this](std::optional<ImageInfoEx> ptr) {
+      if (ptr == std::nullopt) return;
+      if ((*ptr)->ErrorCode != ImageInfo::NoErr)
+        return;
+      PushBack(*ptr, std::nullopt);
+    });
   } else {
     MoveRight();
   }
@@ -314,8 +316,12 @@ void Wallpaper::SetDislike() {
 
   if (ok) {
     // 设置一张新的壁纸, 并把之前的壁纸设置为dislike
-    m_Wallpaper->GetNext(std::bind(&Wallpaper::PushBack,
-      this, std::placeholders::_1, callback));
+    m_Wallpaper->GetNext().then([this, callback](std::optional<ImageInfoEx> ptr) {
+      if (ptr == std::nullopt) return;
+      if ((*ptr)->ErrorCode != ImageInfo::NoErr)
+        return;
+      PushBack(*ptr, callback);
+    });
   } else {
     MoveRight();
     callback();

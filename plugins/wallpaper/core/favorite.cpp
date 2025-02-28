@@ -1,7 +1,9 @@
 #include <favorie.h>
 #include <download.h>
 
+#include <numeric>
 #include <set>
+#include <random>
 
 Favorite::Favorite(YJson& setting):
   WallBase(InitSetting(setting))
@@ -95,7 +97,7 @@ bool Favorite::GetFileList()
   return true;
 }
 
-void Favorite::GetNext(Callback callback)
+HttpAction<ImageInfoEx> Favorite::GetNext()
 {
   Locker locker(m_DataMutex);
 
@@ -120,7 +122,8 @@ void Favorite::GetNext(Callback callback)
     m_FileList.pop_back();
     ptr->ErrorCode = ImageInfo::NoErr;
   }
-  callback(ptr);
+  
+  co_return ptr;
 }
 
 void Favorite::Dislike(std::u8string_view sImgPath)

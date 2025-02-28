@@ -7,9 +7,8 @@
 
 #include <regex>
 #include <utility>
-#include <functional>
+#include <random>
 #include <filesystem>
-#include <thread>
 
 using namespace std::literals;
 
@@ -39,19 +38,17 @@ void WallhavenData::SaveData() {
   m_Data.toFile(m_DataPath);
 }
 
-void WallhavenData::DownloadUrl(Range range, Callback callback)
+HttpAction<void> WallhavenData::DownloadUrl(Range range)
 {
-  if (m_Request && !m_Request->IsFinished()) return;
+  if (m_Request && !m_Request->IsFinished()) co_return;
 
   m_Range = range;
-  m_Index = m_Range.front();
-  m_Array.clear();
 
-  DownloadAll(std::move(callback));
+  co_await DownloadAll().awaiter();
 }
 
 
-void WallhavenData::HandleResult(const YJson &data)
+void WallhavenData::HandleResult(std::vector<std::u8string>& dataArray, const YJson &data)
 {
   for (auto& i: data.getArray()) {
     auto name = i.find(u8"path")->second.getValueString().substr(31);
@@ -59,46 +56,45 @@ void WallhavenData::HandleResult(const YJson &data)
       return j.getValueString() == name;
     });
     if (m_Blacklist.cend() == iter) {
-      m_Array.emplace_back(std::move(name));
+      dataArray.emplace_back(std::move(name));
     }
   }
 }
 
-void WallhavenData::DownloadAll(Callback cb)
+HttpAction<void> WallhavenData::DownloadAll()
 {
-  auto indexString = std::to_string(m_Index);
-  auto url = m_ApiUrl + u8"&page=";
-  url.append(indexString.begin(), indexString.end());
-  m_Request = std::make_unique<HttpLib>(HttpUrl(url), true);
+  HttpResponse* res = nullptr;
+  
+  std::vector<std::u8string> dataArray;
 
-  HttpLib::Callback callback = {
-    .m_FinishCallback = [this, cb](auto msg, auto res){
-      if (msg.empty() && res->status == 200) {
-        YJson root(res->body.begin(), res->body.end());
-        const auto& data = root[u8"data"];
-        if (data.emptyA()) {
-          goto handle;
-        }
-        HandleResult(data);
-      }
+  for (auto index: m_Range) {
+    auto indexString = std::to_string(index);
+    auto url = m_ApiUrl + u8"&page=";
+    url.append(indexString.begin(), indexString.end());
 
-      if (++m_Index != m_Range.back()) {
-        std::thread(&WallhavenData::DownloadAll, this, cb).detach();
-        return;
-      }
-handle:
-      ImageInfoEx ptr;
-      if (!m_Array.empty()) {
-        std::mt19937 g(std::random_device{}());
-        std::shuffle(m_Array.begin(), m_Array.end(), g);
-        m_Mutex.lock();
-        m_Unused.assign(m_Array.begin(), m_Array.end());
-        m_Mutex.unlock();
-      }
-      std::thread(cb).detach();
+    if (m_Request) {
+      m_Request->SetUrl(HttpUrl(url));
+    } else {
+      m_Request = std::make_unique<HttpLib>(HttpUrl(url), true);
     }
-  };
-  m_Request->GetAsync(callback);
+
+    res = co_await m_Request->GetAsync();
+
+    if (res->status != 200) break;
+    YJson root(res->body.begin(), res->body.end());
+    const auto &data = root[u8"data"];
+    if (data.emptyA()) break;
+    HandleResult(dataArray, data);
+  }
+
+  ImageInfoEx ptr;
+  if (!dataArray.empty()) {
+    std::mt19937 g(std::random_device{}());
+    std::shuffle(dataArray.begin(), dataArray.end(), g);
+    m_Mutex.lock();
+    m_Unused.assign(dataArray.begin(), dataArray.end());
+    m_Mutex.unlock();
+  }
 }
 
 Wallhaven::Wallhaven(YJson& setting):
@@ -177,13 +173,13 @@ YJson& Wallhaven::GetCurInfo()
   return m_Setting[u8"WallhavenApi"][m_Setting[u8"WallhavenCurrent"].getValueString()];
 }
 
-bool Wallhaven::CheckData(WallhavenData::Callback callback)
+HttpAction<bool> Wallhaven::CheckData()
 {
   LockerEx locker(m_DataMutex);
 
   auto const apiUrl = GetApiPathUrl();
   if (m_Data.m_ApiUrl == apiUrl) {
-    if (!m_Data.IsEmpty()) return true;
+    if (!m_Data.IsEmpty()) co_return true;
   }
 
   m_Data.ClearAll();
@@ -191,36 +187,20 @@ bool Wallhaven::CheckData(WallhavenData::Callback callback)
   auto const first = GetCurInfo()[u8"StartPage"].getValueInt();
   auto const last = m_Setting[u8"PageSize"].getValueInt() + first;
   locker.unlock();
-  m_Data.DownloadUrl({first, last}, callback);
-  return false;
+  m_Data.DownloadUrl({first, last});
+  co_return false;
 }
 
-void Wallhaven::GetNext(Callback callback)
+HttpAction<ImageInfoEx> Wallhaven::GetNext()
 {
   // https://w.wallhaven.cc/full/1k/wallhaven-1kmx19.jpg
 
-  auto handle = [this, callback]() {
-    ImageInfoEx ptr(new ImageInfo);
-    m_DataMutex.lock();
-    if (!m_Data.m_Unused.empty()) {
-      std::u8string name = m_Data.m_Unused.back().getValueString();
-      ptr->ErrorCode = ImageInfo::NoErr;
-      ptr->ImagePath = GetCurInfo()[u8"Directory"].getValueString() + u8"/" + name;
-      ptr->ImageUrl =
-          u8"https://w.wallhaven.cc/full/"s + name.substr(10, 2) + u8"/"s + name;
-      m_Data.m_Used.push_back(name);
-      m_Data.m_Unused.pop_back();
-      m_Data.SaveData();
-    } else {
-      ptr->ErrorMsg = u8"列表下载失败。";
-      ptr->ErrorCode = ImageInfo::NetErr;
-    }
-    m_DataMutex.unlock();
-    callback(ptr);
-  };
-  if (!CheckData(handle)) return;
+  auto res = co_await CheckData().awaiter();
+  if (!res) co_return ImageInfoEx(new ImageInfo{
+    .ErrorMsg = u8"列表下载失败。",
+    .ErrorCode = ImageInfo::NetErr
+  });
 
-  ImageInfoEx ptr(new ImageInfo);
   m_DataMutex.lock();
   if (m_Data.m_Unused.empty()) {
     m_Data.m_Unused.swap(m_Data.m_Used);
@@ -232,9 +212,24 @@ void Wallhaven::GetNext(Callback callback)
     std::shuffle(temp.begin(), temp.end(), g);
     m_Data.m_Unused.assign(temp.begin(), temp.end());
   }
+
+  ImageInfoEx ptr(new ImageInfo);
+  if (!m_Data.m_Unused.empty()) {
+    std::u8string name = m_Data.m_Unused.back().getValueString();
+    ptr->ErrorCode = ImageInfo::NoErr;
+    ptr->ImagePath = GetCurInfo()[u8"Directory"].getValueString() + u8"/" + name;
+    ptr->ImageUrl =
+        u8"https://w.wallhaven.cc/full/"s + name.substr(10, 2) + u8"/"s + name;
+    m_Data.m_Used.push_back(name);
+    m_Data.m_Unused.pop_back();
+    m_Data.SaveData();
+  } else {
+    ptr->ErrorMsg = u8"列表下载失败。";
+    ptr->ErrorCode = ImageInfo::NetErr;
+  }
   m_DataMutex.unlock();
-  handle();
-  return;
+
+  co_return ptr;
 }
 
 std::string Wallhaven::IsWallhavenFile(std::string name)

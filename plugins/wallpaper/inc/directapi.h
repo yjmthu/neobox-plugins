@@ -7,7 +7,7 @@ public:
   ~DirectApi() override;
 
 public:
-  void GetNext(Callback callback) override;
+  HttpAction<ImageInfoEx> GetNext() override;
   void SetJson(const YJson& json) override;
   inline static const auto m_Name = u8"直链壁纸"s;
 

@@ -1,4 +1,5 @@
-﻿#include <wallbase.h>
+﻿#include <neobox/httplib.h>
+#include <wallbase.h>
 #include <array>
 
 class WallhavenData {
@@ -23,12 +24,10 @@ private:
   YJson m_Data;
   WallBase::Locker::mutex_type& m_Mutex;
   std::unique_ptr<class HttpLib> m_Request;
-  std::vector<std::u8string> m_Array;
   Range m_Range;
-  Range::value_type m_Index;
   YJson InitData();
-  void HandleResult(const YJson& data);
-  void DownloadAll(Callback callback);
+  void HandleResult(std::vector<std::u8string>& array, const YJson& data);
+  HttpAction<void> DownloadAll();
 public:
   std::u8string& m_ApiUrl;
   YJson::ArrayType& m_Used;
@@ -36,8 +35,7 @@ public:
   YJson::ArrayType& m_Blacklist;
   bool IsEmpty() const;
   void ClearAll();
-  void DownloadUrl(Range range,
-    Callback callback);
+  HttpAction<void> DownloadUrl(Range range);
   void SaveData();
 };
 
@@ -45,7 +43,7 @@ class Wallhaven : public WallBase {
  private:
   static bool IsPngFile(std::u8string& str);
  public:
-  void GetNext(Callback callback) override;
+  HttpAction<ImageInfoEx> GetNext() override;
   void Dislike(std::u8string_view sImgPath) override;
   void UndoDislike(std::u8string_view sImgPath) override;
 public:
@@ -61,7 +59,7 @@ private:
   { return const_cast<Wallhaven*>(this)->GetCurInfo(); };
 
   std::string IsWallhavenFile(std::string name);
-  bool CheckData(WallhavenData::Callback callback);
+  HttpAction<bool> CheckData();
   std::u8string GetApiPathUrl() const;
 private:
   WallhavenData m_Data;

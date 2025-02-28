@@ -6,13 +6,12 @@
 #include <filesystem>
 
 class BingApi : public WallBase {
-  typedef std::function<void()> CheckCallback;
 public:
   explicit BingApi(YJson& setting);
   virtual ~BingApi();
 
 public:
-  void GetNext(Callback callback) override;
+  HttpAction<ImageInfoEx> GetNext() override;
   void SetJson(const YJson& json) override;
   inline static const auto m_Name = u8"必应壁纸"s;
 
@@ -20,7 +19,7 @@ private:
   void AutoDownload();
   YJson& InitSetting(YJson& setting);
   void InitData();
-  void CheckData(CheckCallback cbOK, std::optional<CheckCallback> cbNO);
+  HttpAction<bool> CheckData();
   static std::u8string GetToday();
   std::u8string GetImageName(YJson& imgInfo);
   class NeoTimer* m_Timer;

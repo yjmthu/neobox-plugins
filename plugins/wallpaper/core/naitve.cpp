@@ -7,7 +7,7 @@
 #include <set>
 #include <utility>
 #include <numeric>
-#include <functional>
+#include <random>
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -133,7 +133,7 @@ bool Native::GetFileList()
   return true;
 }
 
-void Native::GetNext(Callback callback)
+HttpAction<ImageInfoEx> Native::GetNext()
 {
   Locker locker(m_DataMutex);
 
@@ -151,7 +151,8 @@ void Native::GetNext(Callback callback)
     m_FileList.pop_back();
     ptr->ErrorCode = ImageInfo::NoErr;
   }
-  callback(ptr);
+  
+  co_return ptr;
 }
 
 void Native::SetJson(const YJson& json) {

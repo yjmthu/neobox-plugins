@@ -1,18 +1,13 @@
 #ifndef APICLASS_H
 #define APICLASS_H
 
-#include <stdio.h>
-#include <time.h>
+#include <neobox/httplib.h>
 #include <yjson/yjson.h>
 
 #include <atomic>
 #include <filesystem>
-#include <fstream>
-#include <random>
-#include <sstream>
 #include <string>
 #include <functional>
-#include <system_error>
 #include <mutex>
 
 namespace fs =std::filesystem;
@@ -31,7 +26,7 @@ class WallBase {
 public:
   typedef std::lock_guard<std::mutex> Locker;
   typedef std::unique_lock<std::mutex> LockerEx;
-  typedef std::function<void(ImageInfoEx ptr)> Callback;
+  // typedef std::function<void(ImageInfoEx ptr)> Callback;
 protected:
   static std::mutex m_DataMutex;
   static const fs::path m_DataDir;
@@ -65,7 +60,7 @@ public:
   YJson& m_Setting;
 
 public:
-  virtual void GetNext(Callback callback) = 0;
+  virtual HttpAction<ImageInfoEx> GetNext() = 0;
   virtual void Dislike(std::u8string_view sImgPath);
   virtual void UndoDislike(std::u8string_view sImgPath);
   virtual void SetJson(const YJson& json);

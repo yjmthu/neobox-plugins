@@ -4,9 +4,6 @@
 #include <wallbase.h>
 #include <neobox/systemapi.h>
 
-#include <utility>
-#include <numeric>
-#include <functional>
 #include <filesystem>
 
 using namespace std::literals;
@@ -57,18 +54,18 @@ YJson& DirectApi::InitSetting(YJson& setting)
   return setting;
 }
 
-void DirectApi::GetNext(Callback callback)
+HttpAction<ImageInfoEx> DirectApi::GetNext()
 {
   Locker locker(m_DataMutex);
   auto& apiInfo = GetCurInfo();
   fs::path const curDir = apiInfo[u8"Directory"].getValueString();
   size_t const curIndex = apiInfo[u8"CurPath"].getValueInt();
-  callback(ImageInfoEx(new ImageInfo {
+  co_return ImageInfoEx(new ImageInfo {
     (curDir / GetImageName()).u8string(),
     apiInfo[u8"Url"].getValueString() + apiInfo[u8"Paths"][curIndex].getValueString(),
     u8"OK",
     ImageInfo::NoErr
-  }));
+  });
 }
 
 YJson& DirectApi::GetCurInfo()

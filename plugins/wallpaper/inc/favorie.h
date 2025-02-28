@@ -1,9 +1,6 @@
 #include <wallpaper.h>
 #include <neobox/systemapi.h>
 
-#include <utility>
-#include <numeric>
-#include <functional>
 #include <filesystem>
 
 class Favorite : public WallBase {
@@ -13,7 +10,7 @@ public:
 public:
   YJson& InitSetting(YJson& setting);
   // void InitData();
-  void GetNext(Callback callback) override;
+  HttpAction<ImageInfoEx> GetNext() override;
   fs::path GetImageDir() const;
   inline static const auto m_Name = u8"收藏壁纸"s;
 

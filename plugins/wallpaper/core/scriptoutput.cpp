@@ -4,10 +4,8 @@
 #include <wallbase.h>
 #include <neobox/systemapi.h>
 
-#include <ranges>
 #include <utility>
 #include <numeric>
-#include <functional>
 #include <filesystem>
 
 // export module wallpaper5;
@@ -41,7 +39,7 @@ YJson& ScriptOutput::InitSetting(YJson& setting)
   return setting;
 }
 
-void ScriptOutput::GetNext(Callback callback)
+HttpAction<ImageInfoEx> ScriptOutput::GetNext()
 {
   ImageInfoEx ptr(new ImageInfo);
   m_DataMutex.lock();
@@ -51,8 +49,7 @@ void ScriptOutput::GetNext(Callback callback)
   if (u8cmd.empty()) {
     ptr->ErrorMsg = u8"Invalid command to get wallpaper path."s;
     ptr->ErrorCode = ImageInfo::CfgErr;
-    callback(ptr);
-    return;
+    co_return ptr;
   }
 #ifdef _WIN32
   std::vector<std::wstring> result;
@@ -63,8 +60,7 @@ void ScriptOutput::GetNext(Callback callback)
   if (result.empty()) {
     ptr->ErrorMsg = u8"Invalid command to get wallpaper path."s;
     ptr->ErrorCode = ImageInfo::CfgErr;
-    callback(ptr);
-    return;
+    co_return ptr;
   }
   auto str = Wide2Utf8String(result.front());
 #elif defined (__linux__)
@@ -73,16 +69,14 @@ void ScriptOutput::GetNext(Callback callback)
   if (result.empty()) {
     ptr->ErrorMsg = u8"Run command with empty output."s;
     ptr->ErrorCode = ImageInfo::RunErr;
-    callback(ptr);
-    return;
+    co_return ptr;
   }
   auto& str = result.front();
 #endif
   if (str.empty()) {
     ptr->ErrorMsg = u8"Run command with wrong output."s;
     ptr->ErrorCode = ImageInfo::RunErr;
-    callback(ptr);
-    return;
+    co_return ptr;
   }
   if (!fs::exists(str)) {
 #ifdef _WIN32
@@ -101,13 +95,11 @@ void ScriptOutput::GetNext(Callback callback)
     ptr->ErrorMsg = std::move(wErMsg);
 #endif
     ptr->ErrorCode = ImageInfo::RunErr;
-    callback(ptr);
-    return;
+    co_return ptr;
   }
   ptr->ImagePath = std::move(str);
   ptr->ErrorCode = ImageInfo::NoErr;
-  callback(ptr);
-  return;
+  co_return ptr;
 }
 
 YJson& ScriptOutput::GetCurInfo() 

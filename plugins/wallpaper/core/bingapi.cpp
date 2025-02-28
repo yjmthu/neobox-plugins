@@ -7,7 +7,6 @@
 #include <download.h>
 #include <neobox/neotimer.h>
 
-#include <utility>
 #include <sstream>
 #include <filesystem>
 
@@ -71,7 +70,7 @@ void BingApi::InitData()
   }
 }
 
-void BingApi::CheckData(CheckCallback cbOK, std::optional<CheckCallback> cbNO)
+HttpAction<bool> BingApi::CheckData()
 {
   // https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8
 
@@ -88,60 +87,50 @@ void BingApi::CheckData(CheckCallback cbOK, std::optional<CheckCallback> cbNO)
   });
   m_DataMutex.unlock();
 
-  if (m_Data) {
-    return cbOK();
-  }
+  if (m_Data) co_return true;
 
   m_DataRequest = std::make_unique<HttpLib>(url, true);
   
-  HttpLib::Callback callback = {
-    .m_FinishCallback = [this, cbOK, cbNO](auto msg, auto res) {
-      if (msg.empty() && res->status / 100 == 2) {
-        m_DataMutex.lock();
-        m_Data = new YJson(res->body.begin(), res->body.end());
-        m_Data->toFile(m_DataPath);
+  auto res = co_await m_DataRequest->GetAsync();
+  if (res->status / 100 == 2) {
+    m_DataMutex.lock();
+    m_Data = new YJson(res->body.begin(), res->body.end());
+    m_Data->toFile(m_DataPath);
 
-        m_Setting[u8"curday"] = GetToday();
-        SaveSetting();
-        m_DataMutex.unlock();
-        cbOK();
-      } else if (cbNO && res->status != -1) {
-        (*cbNO)();
-      }
-    }
-  };
+    m_Setting[u8"curday"] = GetToday();
+    SaveSetting();
+    m_DataMutex.unlock();
+    co_return true;
+  }
 
-  m_DataRequest->GetAsync(std::move(callback));
+  co_return false;
 }
 
-void BingApi::GetNext(Callback callback) {
+HttpAction<ImageInfoEx> BingApi::GetNext() {
   static size_t s_uCurImgIndex = 0;
 
   // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN055
   // 下这个接口含义，直接看后面的请求参数1084440_UHD.jpg
 
-  CheckData([callback, this](){
-
-    Locker locker(m_DataMutex);
-    const fs::path imgDir = m_Setting[u8"directory"].getValueString();
-
-    auto& imgInfo = m_Data->find(u8"images")->second[s_uCurImgIndex];
-    m_Setting[u8"copyrightlink"] = imgInfo[u8"copyrightlink"];
-    SaveSetting();
-
-    ++s_uCurImgIndex &= 0x07;
-
-    callback(ImageInfoEx(new ImageInfo{
-      .ImagePath = (imgDir / GetImageName(imgInfo)).u8string(),
-      .ImageUrl = m_Setting[u8"api"].getValueString() + imgInfo[u8"urlbase"].getValueString() + u8"_UHD.jpg",
-      .ErrorCode = ImageInfo::NoErr
-    }));
-
-  }, [callback](){
-    callback(ImageInfoEx(new ImageInfo{
+  auto result = co_await CheckData().awaiter();
+  if (!result) {
+    co_return ImageInfoEx(new ImageInfo{
       .ErrorMsg = u8"Bad network connection.",
       .ErrorCode = ImageInfo::NetErr
-    }));
+    });
+  }
+
+  Locker locker(m_DataMutex);
+  const fs::path imgDir = m_Setting[u8"directory"].getValueString();
+  auto& imgInfo = m_Data->find(u8"images")->second[s_uCurImgIndex];
+  m_Setting[u8"copyrightlink"] = imgInfo[u8"copyrightlink"];
+  SaveSetting();
+
+  ++s_uCurImgIndex &= 0x07;
+  co_return ImageInfoEx(new ImageInfo{
+    .ImagePath = (imgDir / GetImageName(imgInfo)).u8string(),
+    .ImageUrl = m_Setting[u8"api"].getValueString() + imgInfo[u8"urlbase"].getValueString() + u8"_UHD.jpg",
+    .ErrorCode = ImageInfo::NoErr
   });
 }
 
@@ -161,23 +150,22 @@ void BingApi::AutoDownload() {
   if (m_Setting[u8"auto-download"sv].isFalse())
     return;
 
-  m_Timer->StartTimer(20s, [this]() {
+  m_Timer->StartTimer(20s, [this] {
     LockerEx locker(m_DataMutex);
     if (m_Setting[u8"auto-download"sv].isTrue()) {
       locker.unlock();
-      CheckData([this]() {
-        LockerEx locker(m_DataMutex);
-        const fs::path imgDir = m_Setting[u8"directory"].getValueString();
-        for (auto& item : m_Data->find(u8"images")->second.getArray()) {
-          ImageInfoEx ptr(new ImageInfo);
-          ptr->ImagePath = (imgDir / GetImageName(item)).u8string();
-          ptr->ImageUrl = m_Setting[u8"api"].getValueString() +
-            item[u8"urlbase"].getValueString() + u8"_UHD.jpg";
-          ptr->ErrorCode = ImageInfo::NoErr;
-          // ------------------------------------ //
-          DownloadJob::DownloadImage(ptr, std::nullopt);
-        }
-      }, std::nullopt);
+      if (!CheckData().get()) return;
+      locker.lock();
+      const fs::path imgDir = m_Setting[u8"directory"].getValueString();
+      for (auto& item : m_Data->find(u8"images")->second.getArray()) {
+        ImageInfoEx ptr(new ImageInfo);
+        ptr->ImagePath = (imgDir / GetImageName(item)).u8string();
+        ptr->ImageUrl = m_Setting[u8"api"].getValueString() +
+          item[u8"urlbase"].getValueString() + u8"_UHD.jpg";
+        ptr->ErrorCode = ImageInfo::NoErr;
+        // ------------------------------------ //
+        DownloadJob::DownloadImage(ptr, std::nullopt);
+      }
     }
     m_Timer->Expire();
   });
