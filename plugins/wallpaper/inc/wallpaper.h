@@ -5,7 +5,6 @@
 #include <queue>
 #include <stack>
 #include <string>
-#include <functional>
 
 #include <wallbase.h>
 #include <wallconfig.h>
