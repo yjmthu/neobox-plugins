@@ -1,7 +1,7 @@
 ﻿#include <neobox/systemapi.h>
 #include <trayframe.h>
 #include <neobox/pluginmgr.h>
-#include <speedbox.h>
+#include <speedbox.hpp>
 
 #include <thread>
 #include <chrono>

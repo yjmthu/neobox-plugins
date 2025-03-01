@@ -6,7 +6,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 #   find_package(KF5WindowSystem REQUIRED)
 # endif()
 
-file(GLOB source_files src/*.cpp)
+file(GLOB source_files src/*.cpp include/*.hpp)
 
 if(WIN32)
   set(system_shared_files Shell32 Iphlpapi)

@@ -4,6 +4,7 @@
 // #include <neobox/pluginmgr.h>
 #include <tunet.hpp>
 #include <portal.h>
+#include <neobox/neotimer.h>
 
 #include <QAction>
 
@@ -15,6 +16,7 @@ class TuNetCfg: public NeoConfig {
   CfgString(Username)
   CfgString(Password)
   CfgBool(AutoLogin)
+  CfgInt(Delay)
 };
 
 PluginName::PluginName(YJson& settings)
@@ -27,7 +29,15 @@ PluginName::PluginName(YJson& settings)
   // LoadResources();
   InitFunctionMap();
 
-  if (m_Settings->GetAutoLogin()) LogInOut(true, true).get();
+  if (m_Settings->GetAutoLogin()) {
+    auto const delay = m_Settings->GetDelay();
+    auto cb = [this] { LogInOut(true, true).get(); };
+    if (delay > 0) {
+      NeoTimer::SingleShot(std::chrono::seconds(delay), cb);
+    } else {
+      cb();
+    }
+  }
 }
 
 PluginName::~PluginName()
@@ -77,6 +87,15 @@ void PluginName::InitFunctionMap() {
         mgr->ShowMsg("保存成功！");
       }, PluginEvent::Void},
     },
+    {u8"setDelay",
+      {u8"设置延迟", u8"设置启动时登录延迟时间", [this](PluginEvent, void*) {
+        auto const delay = m_Settings->GetDelay();
+        auto result = mgr->m_Menu->GetNewInt("输入", "输入延迟时间", 0, 90, delay);
+        if (result == std::nullopt) return;
+        m_Settings->SetDelay(*result);
+        mgr->ShowMsg("保存成功！");
+      }, PluginEvent::Void},
+    },
   };
 }
 
@@ -88,6 +107,7 @@ YJson& PluginName::InitSettings(YJson& settings) {
     { u8"Username", YJson::String },
     { u8"Password", YJson::String },
     { u8"AutoLogin", false },
+    { u8"Delay", 3 },
   };
 }
 

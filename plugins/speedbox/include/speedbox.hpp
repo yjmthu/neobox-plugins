@@ -10,6 +10,8 @@
 namespace fs = std::filesystem;
 
 class SpeedBox : public WidgetBase {
+  Q_OBJECT
+
 private:
   SpeedBoxCfg& m_Settings;
   class NeoSpeedboxPlg* m_PluginObject;
@@ -19,7 +21,7 @@ private:
 #else
   void* m_SkinDll;
 #endif
-  class QTimer* m_Timer;
+  class NeoTimer* m_Timer;
   class TrayFrame* m_TrayFrame;
   class MenuBase& m_NetCardMenu;
   void* m_AppBarData;
@@ -75,6 +77,8 @@ protected:
   void InitNetCard();
   void UpdateNetCardMenu();
   void UpdateNetCard(QAction* action, bool checked);
+signals:
+  void TimeOut();
 };
 
 #endif

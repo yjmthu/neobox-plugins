@@ -7,19 +7,19 @@
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QPropertyAnimation>
-#include <QTimer>
 #include <QVBoxLayout>
 #include <QSharedMemory>
 #include <QProcess>
 #include <QDragEnterEvent>
 
 #include <neobox/neomenu.hpp>
-#include <speedbox.h>
+#include <speedbox.hpp>
 #include <yjson/yjson.h>
 #include <neobox/pluginmgr.h>
 #include <neobox/appcode.hpp>
 #include <neobox/pluginobject.h>
 #include <neobox/systemapi.h>
+#include <neobox/neotimer.h>
 
 #include <neospeedboxplg.h>
 #include <skinobject.h>
@@ -60,7 +60,7 @@ SpeedBox::SpeedBox(NeoSpeedboxPlg* plugin, SpeedBoxCfg& settings, MenuBase* netc
     , m_NetCardMenu(*netcardMenu)
     , m_CentralWidget(nullptr)
     , m_SkinDll(nullptr)
-    , m_Timer(new QTimer(this))
+    , m_Timer(NeoTimer::New())
     , m_TrayFrame(nullptr)
     , m_Animation(new QPropertyAnimation(this, "geometry"))
 {
@@ -74,7 +74,7 @@ SpeedBox::SpeedBox(NeoSpeedboxPlg* plugin, SpeedBoxCfg& settings, MenuBase* netc
 }
 
 SpeedBox::~SpeedBox() {
-  delete m_Timer;
+  m_Timer->Destroy();
 
   delete m_ProcessForm;
   delete m_CentralWidget;
@@ -457,8 +457,7 @@ void SpeedBox::UpdateScreenIndex(int index)
 
 void SpeedBox::InitNetCard()
 {
-
-  connect(m_Timer, &QTimer::timeout, this, [this]() {
+  m_Timer->StartTimer(1s, [this] {
 #ifdef _WIN32
     static int count = 10;
     if (--count == 0) {
@@ -466,7 +465,12 @@ void SpeedBox::InitNetCard()
       UpdateNetCardMenu();
       count = 10;
     }
-#else
+#endif
+    emit TimeOut();
+  });
+
+  connect(this, &SpeedBox::TimeOut, this, [this] {
+#ifndef _WIN32
     if (IsCurreenWindowFullScreen()) {
       if (isVisible()) hide();
     } else {
@@ -480,7 +484,6 @@ void SpeedBox::InitNetCard()
       m_ProcessForm->UpdateList();
     }
   });
-  m_Timer->start(1000);
 }
 
 void SpeedBox::UpdateNetCardMenu()

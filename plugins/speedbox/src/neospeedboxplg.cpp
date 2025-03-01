@@ -1,5 +1,5 @@
 #include <neospeedboxplg.h>
-#include <speedbox.h>
+#include <speedbox.hpp>
 #include <trayframe.h>
 #include <neobox/pluginobject.h>
 #include <yjson/yjson.h>

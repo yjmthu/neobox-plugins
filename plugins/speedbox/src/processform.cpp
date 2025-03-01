@@ -1,6 +1,6 @@
 #include <processform.h>
 #include <processhelper.h>
-#include <speedbox.h>
+#include <speedbox.hpp>
 
 #include <QScreen>
 #include <QGuiApplication>

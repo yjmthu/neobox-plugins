@@ -13,28 +13,11 @@
 #include "netspeedhelper.h"
 #include <neobox/systemapi.h>
 #include <yjson/yjson.h>
-// #include <speedboxcfg.h>
 
 #include <algorithm>
-#include <array>
 #include <cstdint>
-#include <format>
-#include <fstream>
-#include <functional>
-// #include <iostream>
-#include <list>
-#include <map>
-#include <regex>
-#include <numeric>
-#include <string>
 
-#ifdef _WIN32
-const DWORD g_ProcessorCount = []() {
-  SYSTEM_INFO info;
-  GetSystemInfo(&info);
-  return info.dwNumberOfProcessors;
-}();
-#else
+#if 0
 // https://www.linuxhowtos.org/manpages/5/proc.htm
 #endif
 
@@ -120,13 +103,12 @@ void NetSpeedHelper::UpdateAdaptersAddresses() {
   // if (GetAdaptersInfo(pAdapterInfo, &ulIPSize) != NO_ERROR) return;
 
   m_Adapters.clear();
-  std::u8string strAdapterName;
   for (auto pAdapter = pIpAdpAddress; pAdapter; pAdapter = pAdapter->Next) {
     if (pAdapter->IfType == MIB_IF_TYPE_LOOPBACK ||
         pAdapter->IfType == MIB_IF_TYPE_OTHER) {
       continue;
     }
-    strAdapterName = reinterpret_cast<const char8_t *>(pAdapter->AdapterName);
+    auto strAdapterName = Ansi2Utf8String(pAdapter->AdapterName);
     bool const enabled =
         m_AdapterBalckList.find(strAdapterName) == m_AdapterBalckList.end();
     m_Adapters.push_back(IpAdapter{std::move(strAdapterName),
@@ -139,10 +121,6 @@ void NetSpeedHelper::UpdateAdaptersAddresses() {
 }
 
 void NetSpeedHelper::SetNetInfo() {
-  static const IpAdapter *ptr;
-
-  // static auto ifTableBuffer = std::make_unique_for_overwrite<unsigned
-  // char[]>(sizeof(MIB_IFTABLE));
   auto pIfTable = reinterpret_cast<MIB_IFTABLE *>(m_IfTableBuffer);
 
   // static DWORD dwMISize = sizeof(MIB_IFTABLE);
@@ -156,17 +134,14 @@ void NetSpeedHelper::SetNetInfo() {
 
   auto const tableBegin = pIfTable->table;
   auto const tableEnd = tableBegin + pIfTable->dwNumEntries;
-  const auto find_fn = std::bind(
-      std::find_if<const MIB_IFROW *, bool (*)(const MIB_IFROW &item)>,
-      tableBegin, tableEnd,
-      [](const MIB_IFROW &item) -> bool { return item.dwIndex == ptr->index; });
 
   DWORD inBytes = 0, outBytes = 0;
   for (const auto &adpt : m_Adapters) {
     if (!adpt.enabled)
       continue;
-    ptr = &adpt; // pass it to find_fn.
-    auto pIfRow = find_fn();
+    auto pIfRow = std::find_if(tableBegin, tableEnd, [&adpt](const MIB_IFROW &item) {
+      return item.dwIndex == adpt.index;
+    });
     if (pIfRow != tableEnd) {
       inBytes += pIfRow->dwInOctets;
       outBytes += pIfRow->dwOutOctets;

@@ -83,10 +83,8 @@ Void Wallpaper::SetSlot(OperatorType type) {
 
 bool Wallpaper::IsCurImageFavorite() {
   Locker locker(m_DataMutex);
-  m_PrevImgs.UpdateRegString();
-  auto curImage = m_PrevImgs.GetCurrent();
-  if (!curImage)
-    return false;
+  auto curImage = GetCurIamge();
+  if (!curImage) return false;
   return m_Favorites->IsFileFavorite(*curImage);
 }
 

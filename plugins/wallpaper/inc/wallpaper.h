@@ -48,7 +48,7 @@ public:
   void SetTimeInterval(int minute);
   void SetAutoChange(bool val);
   void ClearJunk();
-  std::optional<fs::path> GetCurIamge() {
+  auto GetCurIamge() {
     m_PrevImgs.UpdateRegString();
     return m_PrevImgs.GetCurrent();
   }
