@@ -2,11 +2,15 @@
 #define NEOWALLPAPERPLG_H
 
 #include <neobox/pluginobject.h>
+#include <QObject>
 
-class NeoWallpaperPlg: public PluginObject
+class NeoWallpaperPlg: public QObject, public PluginObject
 {
+  Q_OBJECT
+
 protected:
   class QAction* InitMenuAction() override;
+  bool eventFilter(QObject* watched, QEvent* event) override;
 public:
   explicit NeoWallpaperPlg(YJson& settings);
   virtual ~NeoWallpaperPlg();
@@ -29,6 +33,10 @@ private:
   MenuBase* LoadFavoriteMenu(MenuBase* parent);
   void LoadDropMenu(QAction* action);
   void LoadMainMenuAction();
+signals:
+  void NextWallpaperChanged();
+  void NextWallpaperDisliked();
+  void DropImageDownloaded();
 };
 
 #endif // NEOWALLPAPERPLG_H

@@ -2,11 +2,10 @@
 #include <download.h>
 #include <neobox/pluginmgr.h>
 #include <neobox/httplib.h>
-#include <thread>
 
 using namespace std::literals;
 
-fs::path FileNameFilter(std::u8string& path) {
+fs::path FileNameFilter(std::u8string path) {
   std::u8string_view pattern(u8":*?\"<>|");
   std::u8string result;
   result.reserve(path.size());
@@ -25,7 +24,7 @@ fs::path FileNameFilter(std::u8string& path) {
   return ret.make_preferred();
 }
 
-std::map<std::filesystem::path, const DownloadJob*> DownloadJob::m_Pool;
+static std::map<std::filesystem::path, HttpLib*> m_Pool;
 std::mutex DownloadJob::m_Mutex;
 
 bool DownloadJob::IsPoolEmpty() {
@@ -33,79 +32,70 @@ bool DownloadJob::IsPoolEmpty() {
   return m_Pool.empty();
 }
 
+static void PoolInsert(std::filesystem::path path, HttpLib* job) {
+  std::lock_guard<std::mutex> locker(DownloadJob::m_Mutex);
+  m_Pool[path] = job;
+}
+
+static void PoolErase(std::filesystem::path path) {
+  std::lock_guard<std::mutex> locker(DownloadJob::m_Mutex);
+  m_Pool.erase(path);
+}
+
+static bool IsPoolExist(std::filesystem::path path) {
+  std::lock_guard<std::mutex> locker(DownloadJob::m_Mutex);
+  return m_Pool.find(path) != m_Pool.end();
+}
+
 void DownloadJob::ClearPool()
 {
   m_Mutex.lock();
   for (auto& [url, worker]: m_Pool) {
-    worker->m_HttpJob->ExitAsync();
+    worker->ExitAsync();
   }
   m_Mutex.unlock();
 
   while (!DownloadJob::IsPoolEmpty());
 }
 
-DownloadJob::DownloadJob(std::filesystem::path path, std::u8string url, Callback cb)
-  : m_HttpJob(new HttpLib(HttpUrl(url), true))
-  , m_ImageFile(new std::ofstream(path, std::ios::out | std::ios::binary))
-  , m_Callback(cb)
-  , m_Path(std::move(path))
-{
-  m_HttpJob->SetRedirect(3);
+static HttpAction<bool> StartJob(fs::path path, std::u8string url) {
+  HttpLib job = HttpLib(HttpUrl(url), true);
+  job.SetRedirect(3);
 
+  PoolInsert(path, &job);
+
+  auto file = std::ofstream
+    (path, std::ios::out | std::ios::binary);
   HttpLib::Callback callback = {
-    .m_WriteCallback = [this](auto data, auto size) {
-      m_ImageFile->write(reinterpret_cast<const char*>(data), size);
-    },
-    .m_FinishCallback = [this, url](auto msg, auto res) {
-      if (msg.empty() && res->status == 200) {
-        m_ImageFile->close();
-        if (m_Callback) (*m_Callback)();
-      } else if (res->status != -1) {
-        mgr->ShowMsgbox(L"出错"s,
-          std::format(L"网络异常！\n"
-          "文件名：{}\n网址：{}\n错误信息：{}\n状态码：{}",
-          m_Path.wstring(), Utf82WideString(url),
-          msg, res->status));
-      }
-
-      std::thread([this](){
-        m_Mutex.lock();
-        auto iter = m_Pool.find(m_Path);
-        if (iter != m_Pool.end()) {
-          delete iter->second;
-        }
-        m_Pool.erase(iter);
-        m_Mutex.unlock();
-      }).detach();
+    .onWrite = [&file](auto data, auto size) {
+      file.write(reinterpret_cast<const char*>(data), size);
     },
   };
+  auto res = co_await job.GetAsync(std::move(callback));
+  file.close();
 
-  m_HttpJob->GetAsync(std::move(callback));
-}
+  PoolErase(path);
 
-DownloadJob::~DownloadJob()
-{
-  delete m_HttpJob;
-  if (m_ImageFile->is_open()) {
-    m_ImageFile->close();
-    if (fs::exists(m_Path))
-      fs::remove(m_Path);
+  if (file.fail() || res->status != 200) {
+    fs::remove(path);
+    co_return false;
   }
-  delete m_ImageFile;
+
+  co_return true;
 }
 
-
-void DownloadJob::DownloadImage(const ImageInfoEx imageInfo,
-  Callback callback)
+HttpAction<DownloadJob::Error> DownloadJob::DownloadImage(const ImageInfo& imageInfo)
 {
-  if (imageInfo->ErrorCode != ImageInfo::NoErr) {
-    mgr->ShowMsgbox(L"出错", Utf82WideString(imageInfo->ErrorMsg));
-    return ;
+  using Error = DownloadJob::Error;
+  if (imageInfo.ErrorCode != ImageInfo::NoErr) {
+    mgr->ShowMsgbox(L"出错", Utf82WideString(imageInfo.ErrorMsg));
+    co_return Error::ImageInfoError;
   }
 
   // Check image dir and file.
-  const auto& filePath = FileNameFilter(imageInfo->ImagePath);
-  const auto& dir = filePath.parent_path();
+  const auto filePath = FileNameFilter(imageInfo.ImagePath);
+  const auto dir = filePath.parent_path();
+  const auto imageUri = imageInfo.ImageUrl;
 
   std::error_code error;
   if (!fs::exists(dir) && !fs::create_directories(dir, error)) {
@@ -115,29 +105,30 @@ void DownloadJob::DownloadImage(const ImageInfoEx imageInfo,
     if (!fs::file_size(filePath)){
       fs::remove(filePath);
     } else {
-      if (callback) (*callback)();
-      return;
+      co_return Error::NoError;
     }
   }
-  if (imageInfo->ImageUrl.empty()) {
-    return;
+  if (imageUri.empty()) {
+    co_return Error::ImageInfoError;
   }
 
   if (!HttpLib::IsOnline()) {
     mgr->ShowMsgbox(L"出错", L"网络异常");
-    return;
+    co_return Error::NetworkError;
   }
 
-  std::thread([callback, filePath, imageInfo](){
-    std::lock_guard<std::mutex> locker(m_Mutex);
-    auto& job = m_Pool[filePath];
-    if (job) {
-      mgr->ShowMsgbox(L"提示", L"任务已经存在！");
-      return;
-    }
+  if (IsPoolExist(filePath)) {
+    co_return Error::ImageInfoError;
+  }
 
-    job = new DownloadJob(filePath, imageInfo->ImageUrl, std::move(callback));
-  }).detach();
+  auto const res = co_await StartJob(filePath, imageUri).awaiter();
+
+  if (!res || !*res) {
+    mgr->ShowMsgbox(L"出错", L"下载失败");
+    co_return Error::NetworkError;
+  }
+
+  co_return Error::NoError;
 }
 
 bool DownloadJob::IsImageFile(const std::u8string& filesName) {

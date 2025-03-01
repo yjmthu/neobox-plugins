@@ -23,11 +23,9 @@ private:
   const fs::path m_DataPath;
   YJson m_Data;
   WallBase::Locker::mutex_type& m_Mutex;
-  std::unique_ptr<class HttpLib> m_Request;
-  Range m_Range;
   YJson InitData();
   void HandleResult(std::vector<std::u8string>& array, const YJson& data);
-  HttpAction<void> DownloadAll();
+  HttpAction<bool> DownloadAll(const Range& range);
 public:
   std::u8string& m_ApiUrl;
   YJson::ArrayType& m_Used;
@@ -35,7 +33,7 @@ public:
   YJson::ArrayType& m_Blacklist;
   bool IsEmpty() const;
   void ClearAll();
-  HttpAction<void> DownloadUrl(Range range);
+  HttpAction<bool> DownloadUrl(Range range);
   void SaveData();
 };
 
@@ -43,7 +41,7 @@ class Wallhaven : public WallBase {
  private:
   static bool IsPngFile(std::u8string& str);
  public:
-  HttpAction<ImageInfoEx> GetNext() override;
+  HttpAction<ImageInfo> GetNext() override;
   void Dislike(std::u8string_view sImgPath) override;
   void UndoDislike(std::u8string_view sImgPath) override;
 public:

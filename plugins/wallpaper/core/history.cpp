@@ -3,6 +3,15 @@
 #include <neobox/systemapi.h>
 #include <platform.hpp>
 
+#ifdef _DEBUG
+#include <iostream>
+
+static std::ostream& operator<<(std::ostream& os, const std::u8string& str) {
+  return os.write(reinterpret_cast<const char*>(str.data()), str.size());
+}
+
+#endif
+
 WallpaperHistory::WallpaperHistory()
   : WallpaperHistoryBase()
 {
@@ -22,7 +31,7 @@ void WallpaperHistory::UpdateRegString()
   auto curImage = GetCurrent();
   if (!curImage || *curImage != *res) {
 #ifdef _DEBUG
-    std::cout << "系统之前壁纸为：" << *res << std::endl;
+    std::cout << "系统之前壁纸为：" << res->u8string() << std::endl;
 #endif
     PushBack(std::move(*res));
   }

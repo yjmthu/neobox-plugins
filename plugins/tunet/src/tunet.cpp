@@ -2,7 +2,7 @@
 #include <neobox/neoconfig.h>
 #include <neobox/menubase.hpp>
 // #include <neobox/pluginmgr.h>
-#include <tunet.h>
+#include <tunet.hpp>
 #include <portal.h>
 
 #include <QAction>
@@ -18,7 +18,8 @@ class TuNetCfg: public NeoConfig {
 };
 
 PluginName::PluginName(YJson& settings)
-  : PluginObject(InitSettings(settings), u8"tunet", u8"清华校园网")
+  : QObject()
+  , PluginObject(InitSettings(settings), u8"tunet", u8"清华校园网")
   , m_Settings(new TuNetCfg(settings))
   , m_Portal(new Portal())
   , m_MainMenuAction(nullptr)
@@ -26,7 +27,7 @@ PluginName::PluginName(YJson& settings)
   // LoadResources();
   InitFunctionMap();
 
-  if (m_Settings->GetAutoLogin()) LogInOut(true, true);
+  if (m_Settings->GetAutoLogin()) LogInOut(true, true).get();
 }
 
 PluginName::~PluginName()
@@ -40,12 +41,12 @@ void PluginName::InitFunctionMap() {
   m_PluginMethod = {
     {u8"login",
       {u8"登录网络", u8"登录清华大学校园网", [this](PluginEvent, void*) {
-        LogInOut(true, false);
+        LogInOut(true, false).get();
       }, PluginEvent::Void},
     },
     {u8"logout",
       {u8"登出网络", u8"登出清华大学校园网", [this](PluginEvent, void*) {
-        LogInOut(false, false);
+        LogInOut(false, false).get();
       }, PluginEvent::Void},
     },
     {u8"autoLogin",

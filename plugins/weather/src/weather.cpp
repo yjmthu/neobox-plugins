@@ -146,7 +146,7 @@ void Weather::Fetch(GetTypes type, std::optional<std::u8string_view> data)
   m_Request = std::make_unique<HttpLib>(url, true, 2s);
   
   HttpLib::Callback callback = {
-    .m_FinishCallback = [this, type](auto msg, auto res) {
+    .onFinish = [this, type](auto msg, auto res) {
       if (msg.empty() && res->status / 100 == 2) {
         std::lock_guard<std::mutex> locker(m_Mutex);
         std::u8string unCompressed;

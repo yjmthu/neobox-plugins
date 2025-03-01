@@ -5,7 +5,7 @@ class ScriptOutput : public WallBase {
 public:
   explicit ScriptOutput(YJson& setting);
   ~ScriptOutput() override;
-  HttpAction<ImageInfoEx> GetNext() override;
+  HttpAction<ImageInfo> GetNext() override;
   inline static const auto m_Name = u8"脚本输出"s;
 
 private:

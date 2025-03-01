@@ -5,6 +5,15 @@
 #include <set>
 #include <random>
 
+#ifdef _DEBUG
+#include <iostream>
+
+static std::ostream& operator<<(std::ostream& os, const std::u8string& str) {
+  os.write(reinterpret_cast<const char*>(str.data()), str.size());
+  return os;
+}
+#endif
+
 Favorite::Favorite(YJson& setting):
   WallBase(InitSetting(setting))
 {
@@ -78,8 +87,16 @@ bool Favorite::GetFileList()
     }
     numbers.assign(already.begin(), already.end());
   }
+#ifdef _DEBUG
+  std::cout << "Folder: " << curDir.u8string() << std::endl;
+  std::cout << "Total file count: " << m_Toltal << std::endl;
+  std::cout << "Max file count: " << maxCount << std::endl;
+#endif
 
   for (auto target = numbers.cbegin(); auto& iter : fs::directory_iterator(curDir)) {
+    if (target == numbers.cend())
+      break;
+
     auto& path = iter.path();
     if (fs::is_directory(iter.status())) {
     } else if (DownloadJob::IsImageFile(path.u8string())) {
@@ -94,18 +111,17 @@ bool Favorite::GetFileList()
   if (m_Setting[u8"Random"].isTrue()) {
     std::shuffle(m_FileList.begin(), m_FileList.end(), g);
   }
+#ifdef _DEBUG
+  std::cout << "File count: " << m_FileList.size() << std::endl;
+#endif
   return true;
 }
 
-HttpAction<ImageInfoEx> Favorite::GetNext()
+HttpAction<ImageInfo> Favorite::GetNext()
 {
   Locker locker(m_DataMutex);
 
-  ImageInfoEx ptr(new ImageInfo);
-
-  while (!m_FileList.empty() && !fs::exists(m_FileList.back())) {
-    m_FileList.pop_back();
-  }
+  ImageInfo ptr {};
 
   while (!m_FileList.empty()) {
     if (!fs::exists(m_FileList.back()))
@@ -114,14 +130,24 @@ HttpAction<ImageInfoEx> Favorite::GetNext()
       break;
   }
 
-  if (m_FileList.empty() && !GetFileList()) {
-    ptr->ErrorMsg = u8"Empty folder with no wallpaper in it.";
-    ptr->ErrorCode = ImageInfo::FileErr;
-  } else {
-    ptr->ImagePath = std::move(m_FileList.back());
-    m_FileList.pop_back();
-    ptr->ErrorCode = ImageInfo::NoErr;
+#ifdef _DEBUG
+  if (m_FileList.empty()) {
+    std::cerr << "Empty folder with no wallpaper in it." << std::endl;
   }
+#endif
+
+  if (m_FileList.empty() && !GetFileList()) {
+    ptr.ErrorMsg = u8"Empty folder with no wallpaper in it.";
+    ptr.ErrorCode = ImageInfo::FileErr;
+  } else {
+    ptr.ImagePath = std::move(m_FileList.back());
+    m_FileList.pop_back();
+    ptr.ErrorCode = ImageInfo::NoErr;
+  }
+
+#ifdef _DEBUG
+  std::cout << "GetNext: " << ptr.ImagePath << " ErrorCode: " << ptr.ErrorCode << std::endl;
+#endif
   
   co_return ptr;
 }
@@ -176,4 +202,15 @@ void Favorite::UndoDislike(std::u8string_view sImgPath)
 fs::path Favorite::GetImageDir() const
 {
   return m_Setting[u8"Directory"].getValueString();
+}
+
+bool Favorite::IsFileFavorite(const fs::path& path) const
+{
+  Locker locker(m_DataMutex);
+  fs::path curDir = GetImageDir();
+#ifdef _DEBUG
+  std::cout << "IsFileFavorite: " << curDir.u8string()
+    << " VS. " << path.parent_path().u8string() << std::endl;
+#endif
+  return fs::exists(curDir / path.filename());
 }

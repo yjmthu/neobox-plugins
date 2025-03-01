@@ -54,18 +54,18 @@ YJson& DirectApi::InitSetting(YJson& setting)
   return setting;
 }
 
-HttpAction<ImageInfoEx> DirectApi::GetNext()
+HttpAction<ImageInfo> DirectApi::GetNext()
 {
   Locker locker(m_DataMutex);
   auto& apiInfo = GetCurInfo();
   fs::path const curDir = apiInfo[u8"Directory"].getValueString();
   size_t const curIndex = apiInfo[u8"CurPath"].getValueInt();
-  co_return ImageInfoEx(new ImageInfo {
+  co_return {
     (curDir / GetImageName()).u8string(),
     apiInfo[u8"Url"].getValueString() + apiInfo[u8"Paths"][curIndex].getValueString(),
     u8"OK",
     ImageInfo::NoErr
-  });
+  };
 }
 
 YJson& DirectApi::GetCurInfo()

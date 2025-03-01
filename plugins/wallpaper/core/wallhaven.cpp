@@ -12,6 +12,15 @@
 
 using namespace std::literals;
 
+#ifdef _DEBUG
+#include <iostream>
+
+static std::ostream& operator<<(std::ostream& os, const std::u8string& str) {
+  os.write(reinterpret_cast<const char*>(str.data()), str.size());
+  return os;
+}
+#endif
+
 YJson WallhavenData::InitData() {
   try {
     return YJson(m_DataPath, YJson::UTF8);
@@ -38,13 +47,17 @@ void WallhavenData::SaveData() {
   m_Data.toFile(m_DataPath);
 }
 
-HttpAction<void> WallhavenData::DownloadUrl(Range range)
+HttpAction<bool> WallhavenData::DownloadUrl(Range range)
 {
-  if (m_Request && !m_Request->IsFinished()) co_return;
+  static bool working = false;
 
-  m_Range = range;
+  if (working) co_return false;
 
-  co_await DownloadAll().awaiter();
+  working = true;
+  auto res = co_await DownloadAll(range).awaiter();
+  working = false;
+
+  co_return res != std::nullopt && *res;
 }
 
 
@@ -61,40 +74,57 @@ void WallhavenData::HandleResult(std::vector<std::u8string>& dataArray, const YJ
   }
 }
 
-HttpAction<void> WallhavenData::DownloadAll()
+HttpAction<bool> WallhavenData::DownloadAll(const Range& range)
 {
-  HttpResponse* res = nullptr;
-  
+#ifdef _DEBUG
+  std::cout << "download all page: " << range[0] << "-" << range[1] << std::endl;
+#endif
   std::vector<std::u8string> dataArray;
 
-  for (auto index: m_Range) {
+  for (auto index: range) {
     auto indexString = std::to_string(index);
     auto url = m_ApiUrl + u8"&page=";
     url.append(indexString.begin(), indexString.end());
 
-    if (m_Request) {
-      m_Request->SetUrl(HttpUrl(url));
-    } else {
-      m_Request = std::make_unique<HttpLib>(HttpUrl(url), true);
+#ifdef _DEBUG
+    std::cout << "downloading page <" << url << ">" << std::endl;
+#endif
+    // m_Request = std::make_unique<HttpLib>(HttpUrl(url), true);
+    auto clt = HttpLib(HttpUrl(url), true);
+
+    auto res = co_await clt.GetAsync();
+
+    if (res->status != 200) {
+#ifdef _DEBUG
+      std::cout << "download page " << index << " failed with status code: " << res->status << std::endl;
+#endif
+      break;
     }
-
-    res = co_await m_Request->GetAsync();
-
-    if (res->status != 200) break;
     YJson root(res->body.begin(), res->body.end());
     const auto &data = root[u8"data"];
-    if (data.emptyA()) break;
+    if (data.emptyA()) {
+#ifdef _DEBUG
+      std::cout << "download page " << index << " failed with empty data." << std::endl;
+#endif
+      break;
+    }
     HandleResult(dataArray, data);
+#ifdef _DEBUG
+    std::cout << "current data count: " << dataArray.size() << std::endl;
+#endif
   }
 
-  ImageInfoEx ptr;
-  if (!dataArray.empty()) {
-    std::mt19937 g(std::random_device{}());
-    std::shuffle(dataArray.begin(), dataArray.end(), g);
-    m_Mutex.lock();
-    m_Unused.assign(dataArray.begin(), dataArray.end());
-    m_Mutex.unlock();
-  }
+#ifdef _DEBUG
+  std::cout << dataArray.size() << " image url downloaded." << std::endl;
+#endif
+
+  if (dataArray.empty()) co_return false;
+
+  std::mt19937 g(std::random_device{}());
+  std::shuffle(dataArray.begin(), dataArray.end(), g);
+  std::lock_guard<std::mutex> locker(m_Mutex);
+  m_Unused.assign(dataArray.begin(), dataArray.end());
+  co_return true;
 }
 
 Wallhaven::Wallhaven(YJson& setting):
@@ -187,19 +217,21 @@ HttpAction<bool> Wallhaven::CheckData()
   auto const first = GetCurInfo()[u8"StartPage"].getValueInt();
   auto const last = m_Setting[u8"PageSize"].getValueInt() + first;
   locker.unlock();
-  m_Data.DownloadUrl({first, last});
-  co_return false;
+
+  auto const res = co_await m_Data.DownloadUrl({first, last}).awaiter();
+  
+  co_return res != std::nullopt && *res;
 }
 
-HttpAction<ImageInfoEx> Wallhaven::GetNext()
+HttpAction<ImageInfo> Wallhaven::GetNext()
 {
   // https://w.wallhaven.cc/full/1k/wallhaven-1kmx19.jpg
 
   auto res = co_await CheckData().awaiter();
-  if (!res) co_return ImageInfoEx(new ImageInfo{
+  if (!res || !*res) co_return {
     .ErrorMsg = u8"列表下载失败。",
     .ErrorCode = ImageInfo::NetErr
-  });
+  };
 
   m_DataMutex.lock();
   if (m_Data.m_Unused.empty()) {
@@ -213,19 +245,19 @@ HttpAction<ImageInfoEx> Wallhaven::GetNext()
     m_Data.m_Unused.assign(temp.begin(), temp.end());
   }
 
-  ImageInfoEx ptr(new ImageInfo);
+  ImageInfo ptr {};
   if (!m_Data.m_Unused.empty()) {
     std::u8string name = m_Data.m_Unused.back().getValueString();
-    ptr->ErrorCode = ImageInfo::NoErr;
-    ptr->ImagePath = GetCurInfo()[u8"Directory"].getValueString() + u8"/" + name;
-    ptr->ImageUrl =
+    ptr.ErrorCode = ImageInfo::NoErr;
+    ptr.ImagePath = GetCurInfo()[u8"Directory"].getValueString() + u8"/" + name;
+    ptr.ImageUrl =
         u8"https://w.wallhaven.cc/full/"s + name.substr(10, 2) + u8"/"s + name;
     m_Data.m_Used.push_back(name);
     m_Data.m_Unused.pop_back();
     m_Data.SaveData();
   } else {
-    ptr->ErrorMsg = u8"列表下载失败。";
-    ptr->ErrorCode = ImageInfo::NetErr;
+    ptr.ErrorMsg = u8"列表下载失败。";
+    ptr.ErrorCode = ImageInfo::NetErr;
   }
   m_DataMutex.unlock();
 

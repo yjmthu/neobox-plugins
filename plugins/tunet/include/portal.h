@@ -32,6 +32,7 @@ public:
     ParseError,
     TokenError,
     AuthError,
+    HttpLibError,
   };
 
 private:
@@ -64,7 +65,7 @@ public:
   HttpAction<Error> Login();
   HttpAction<Error> Logout();
 
-  HttpAwaiter<> GetInfo();
+  HttpAction<Error> GetInfo();
   HttpAwaiter<> SendAuth(std::u8string_view token);
   HttpAwaiter<> GetToken(std::u8string_view ip);
   std::optional<YJson> ParseJson(HttpResponse* res);

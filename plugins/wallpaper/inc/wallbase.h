@@ -20,17 +20,17 @@ struct ImageInfo {
   uint32_t ErrorCode;
 };
 
-typedef std::shared_ptr<ImageInfo> ImageInfoEx;
-
 class WallBase {
 public:
   typedef std::lock_guard<std::mutex> Locker;
   typedef std::unique_lock<std::mutex> LockerEx;
-  // typedef std::function<void(ImageInfoEx ptr)> Callback;
 protected:
   static std::mutex m_DataMutex;
   static const fs::path m_DataDir;
   static std::function<void()> SaveSetting;
+  typedef HttpAction<void> Void;
+  typedef HttpAction<bool> Bool;
+  typedef HttpAction<int> Int;
 
   // 获取用户图片目录，并返回下面的“桌面壁纸”目录
   static fs::path GetHomePicLocation();
@@ -60,7 +60,7 @@ public:
   YJson& m_Setting;
 
 public:
-  virtual HttpAction<ImageInfoEx> GetNext() = 0;
+  virtual HttpAction<ImageInfo> GetNext() = 0;
   virtual void Dislike(std::u8string_view sImgPath);
   virtual void UndoDislike(std::u8string_view sImgPath);
   virtual void SetJson(const YJson& json);

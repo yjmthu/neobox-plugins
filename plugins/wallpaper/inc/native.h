@@ -10,7 +10,7 @@ public:
   virtual ~Native();
 
 public:
-  HttpAction<ImageInfoEx> GetNext() override;
+  HttpAction<ImageInfo> GetNext() override;
   void SetJson(const YJson& json) override;
   inline static const auto m_Name = u8"本地壁纸"s;
 

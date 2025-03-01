@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10.1)
 
-file(GLOB source_files src/*.cpp core/*.cpp)
+file(GLOB source_files src/*.cpp core/*.cpp include/*.hpp)
 
 if(WIN32)
   set(system_shared_files Shell32)

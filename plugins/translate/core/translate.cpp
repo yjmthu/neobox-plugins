@@ -280,7 +280,7 @@ void Translate::GetResultBaidu(const Utf8Array& text) {
   m_Request = std::make_unique<HttpLib>(url, true);
   
   HttpLib::Callback callback = {
-    .m_FinishCallback = [this](auto message, auto res) {
+    .onFinish = [this](auto message, auto res) {
       if (message.empty() && (res->status / 100 == 2)) {
         try {
           YJson jsData(res->body.begin(), res->body.end());
@@ -341,7 +341,7 @@ void Translate::GetResultYoudao(const Utf8Array& text) {
   m_Request->SetHeader(u8"Content-Type", u8"application/x-www-form-urlencoded");
 
   HttpLib::Callback callback = {
-    .m_FinishCallback = [this](auto message, auto res) {
+    .onFinish = [this](auto message, auto res) {
       if (message.empty() && (res->status / 100 == 2)) {
         try {
           FormatYoudaoResult(YJson(res->body.begin(), res->body.end()));
@@ -380,7 +380,7 @@ void Translate::GetResultGoogle(const Utf8Array& text) {
   // m_Request->SetHeader(u8"Accept", u8"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
 
   HttpLib::Callback callback = {
-    .m_FinishCallback = [this](auto message, auto res) {
+    .onFinish = [this](auto message, auto res) {
       if (message.empty() && (res->status / 100 == 2)) {
         try {
           FormatGoogleResult(YJson(res->body.begin(), res->body.end()));
@@ -536,7 +536,7 @@ void Translate::GetResultBingSimple(const Utf8Array& text) {
   m_Request = std::make_unique<HttpLib>(url, true, 2s);
 
   HttpLib::Callback callback = {
-    .m_FinishCallback = [this](auto message, auto res) {
+    .onFinish = [this](auto message, auto res) {
       if (message.empty() && (res->status / 100 == 2)) {
         try {
           m_Callback(res->body.data(), res->body.size());
@@ -564,7 +564,7 @@ void Translate::GetResultIciba(const Utf8Array& text)
   m_Request = std::make_unique<HttpLib>(url, true, 2s);
 
   HttpLib::Callback callback = {
-    .m_FinishCallback = [this](auto message, auto res) {
+    .onFinish = [this](auto message, auto res) {
       if (message.empty() && (res->status / 100 == 2)) {
         // m_Callback(res->body.data(), res->body.size());
         // return;
@@ -700,7 +700,7 @@ void Translate::GetResultDictionary(const Utf8Array& text)
   m_Request = std::make_unique<HttpLib>(HttpUrl(url), true, 2s);
 
   HttpLib::Callback callback = {
-    .m_FinishCallback = [this](auto message, auto res) {
+    .onFinish = [this](auto message, auto res) {
       if (message.empty() && (res->status / 100 == 2)) {
         try {
           YJson root(res->body.begin(), res->body.end());

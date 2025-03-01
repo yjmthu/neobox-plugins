@@ -133,23 +133,23 @@ bool Native::GetFileList()
   return true;
 }
 
-HttpAction<ImageInfoEx> Native::GetNext()
+HttpAction<ImageInfo> Native::GetNext()
 {
   Locker locker(m_DataMutex);
 
-  ImageInfoEx ptr(new ImageInfo);
+  ImageInfo ptr {};
 
   while (!m_FileList.empty() && !fs::exists(m_FileList.back())) {
     m_FileList.pop_back();
   }
 
   if (m_FileList.empty() && !GetFileList()) {
-    ptr->ErrorMsg = u8"Empty folder with no wallpaper in it.";
-    ptr->ErrorCode = ImageInfo::FileErr;
+    ptr.ErrorMsg = u8"Empty folder with no wallpaper in it.";
+    ptr.ErrorCode = ImageInfo::FileErr;
   } else {
-    ptr->ImagePath = std::move(m_FileList.back());
+    ptr.ImagePath = std::move(m_FileList.back());
     m_FileList.pop_back();
-    ptr->ErrorCode = ImageInfo::NoErr;
+    ptr.ErrorCode = ImageInfo::NoErr;
   }
   
   co_return ptr;

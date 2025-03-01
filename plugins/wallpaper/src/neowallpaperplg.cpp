@@ -9,7 +9,7 @@
 #include <nativeex.h>
 #include <favoriteex.h>
 #include <scriptex.h>
-#include <neowallpaperplg.h>
+#include <neowallpaperplg.hpp>
 #include <wallpaper.h>
 #include <platform.hpp>
 
@@ -32,8 +32,9 @@
 #define PluginName NeoWallpaperPlg
 #include <neobox/pluginexport.cpp>
 
-PluginName::PluginName(YJson& settings):
-  PluginObject(InitSettings(settings), u8"neowallpaperplg", u8"壁纸引擎"),
+PluginName::PluginName(YJson& settings)
+  : QObject()
+  , PluginObject(InitSettings(settings), u8"neowallpaperplg", u8"壁纸引擎"),
   m_Wallpaper(new Wallpaper(m_Settings))
 {
   InitFunctionMap();
@@ -41,6 +42,7 @@ PluginName::PluginName(YJson& settings):
 
 PluginName::~PluginName()
 {
+  m_MainMenuAction->menu()->removeEventFilter(this);
   delete m_MainMenuAction;
   // delete m_MainMenu;
   delete m_Wallpaper;
@@ -110,7 +112,12 @@ void PluginName::InitFunctionMap()
           dataRaw.back().size()
         ));
       }
-      m_Wallpaper->SetDropFile(dataRef);
+      QEventLoop loop;
+      m_Wallpaper->SetDropFile(dataRef).then([this]{
+        emit DropImageDownloaded();
+      });
+      QObject::connect(this, &PluginName::DropImageDownloaded, &loop, &QEventLoop::quit);
+      loop.exec();
     }
   }});
 }
@@ -134,40 +141,52 @@ void PluginName::LoadMainMenuAction()
   auto const menu = new MenuBase(m_MainMenu);
   m_MainMenuAction->setMenu(menu);
 
+  menu->installEventFilter(this);
+
   static std::vector<std::pair<std::u8string, FunctionInfo>> temp = {
     { u8"prev",
       {u8"上一张图", u8"切换到上一张壁纸", [this](PluginEvent, void*) {
-          m_Wallpaper->SetSlot(OperatorType::UNext);
+          m_Wallpaper->SetSlot(OperatorType::UNext).get();
         }, PluginEvent::Void }
     },
     {u8"next",
       {u8"下一张图", u8"切换到下一张壁纸", [this](PluginEvent, void*) {
-          m_Wallpaper->SetSlot(OperatorType::Next);
+          QEventLoop loop;
+          m_Wallpaper->SetSlot(OperatorType::Next).then([this]{
+            emit NextWallpaperChanged();
+          });
+          QObject::connect(this, &PluginName::NextWallpaperChanged, &loop, &QEventLoop::quit);
+          loop.exec();
         }, PluginEvent::Void
       },
     },
     {u8"dislike",
       {u8"不看此图", u8"把这张图移动到垃圾桶", [this](PluginEvent, void*) {
-          m_Wallpaper->SetSlot(OperatorType::Dislike);
+          QEventLoop loop;
+          m_Wallpaper->SetSlot(OperatorType::Dislike).then([this]{
+            emit NextWallpaperDisliked();
+          });
+          QObject::connect(this, &PluginName::NextWallpaperDisliked, &loop, &QEventLoop::quit);
+          loop.exec();
         }, PluginEvent::Void
       },
     },
     {u8"undoDislike",
       {u8"撤销删除", u8"撤销上次的删除操作",
        [this](PluginEvent, void*){
-          m_Wallpaper->SetSlot(OperatorType::UDislike);
+          m_Wallpaper->SetSlot(OperatorType::UDislike).get();
         }, PluginEvent::Void
       },
     },
     {u8"collect",
       {u8"收藏图片", u8"把当前壁纸复制到收藏夹", [this](PluginEvent, void*) {
-        m_Wallpaper->SetSlot(OperatorType::Favorite);
+        m_Wallpaper->SetSlot(OperatorType::Favorite).get();
         mgr->ShowMsg("收藏壁纸成功！");
       }, PluginEvent::Void},
     },
     {u8"undoCollect",
       {u8"撤销收藏", u8"如果当前壁纸在收藏夹内，则将其移出", [this](PluginEvent, void*) {
-          m_Wallpaper->SetSlot(OperatorType::UFavorite);
+          m_Wallpaper->SetSlot(OperatorType::UFavorite).get();
           mgr->ShowMsg("撤销收藏壁纸成功！");
         }, PluginEvent::Void
       },
@@ -253,6 +272,22 @@ YJson& PluginName::InitSettings(YJson& settings)
     nameFmt = u8"drop-image {1} {0:%Y-%m-%d}";
   return settings;
   // we may not need to call SaveSettings;
+}
+
+bool PluginName::eventFilter(QObject* obj, QEvent* event)
+{
+  if (obj == m_MainMenuAction->menu() && event->type() == QEvent::Show) {
+    if (m_Wallpaper->IsCurImageFavorite()) {
+      // hide the collect action
+      m_MainMenuAction->menu()->actions().at(4)->setVisible(false);
+      m_MainMenuAction->menu()->actions().at(5)->setVisible(true);
+    } else {
+      m_MainMenuAction->menu()->actions().at(4)->setVisible(true);
+      m_MainMenuAction->menu()->actions().at(5)->setVisible(false);
+    }
+    return true;
+  }
+  return QObject::eventFilter(obj, event);
 }
 
 void PluginName::LoadWallpaperTypeMenu(MenuBase* pluginMenu)

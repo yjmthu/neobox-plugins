@@ -2,12 +2,14 @@
 #define THUNET_H
 
 #include <neobox/pluginobject.h>
-#include <atomic>
+#include <QObject>
 
 #include <portal.h>
 
-class Thunet: public PluginObject
+class Thunet: public QObject, public PluginObject
 {
+  Q_OBJECT
+
 public:
   Thunet(YJson& settings);
   virtual ~Thunet();

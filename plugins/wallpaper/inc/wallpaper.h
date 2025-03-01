@@ -13,6 +13,8 @@
 
 namespace fs = std::filesystem;
 
+#define NO_IGNORE_WARNING "The return value of the coroutine is not used."
+
 enum class OperatorType {
   Next, UNext, Dislike, UDislike, Favorite, UFavorite
 };
@@ -21,26 +23,27 @@ class Wallpaper {
 public:
   using Locker = WallBase::Locker;
   using LockerEx = WallBase::LockerEx;
+  using Void = HttpAction<void>;
 private:
   fs::path Url2Name(const std::u8string& url);
   void AppendBlackList(const fs::path& path);
   void WriteBlackList();
-  void PushBack(ImageInfoEx ptr,
-    std::optional<std::function<void()>> callback);
+  HttpAction<void> PushBack(const ImageInfo& ptr);
   bool MoveRight();
   static YJson* GetConfigData();
 private:
   void ReadBlacklist();
-  void SetNext();
+  [[nodiscard(NO_IGNORE_WARNING)]] Void SetNext();
   void UnSetNext();
-  void SetDislike();
+  [[nodiscard(NO_IGNORE_WARNING)]] Void SetDislike();
   void UnSetDislike();
   void SetFavorite();
-  void UnSetFavorite();
+  [[nodiscard(NO_IGNORE_WARNING)]] Void UnSetFavorite();
 
 public:
-  void SetDropFile(std::queue<std::u8string_view> url);
-  void SetSlot(OperatorType type);
+  [[nodiscard(NO_IGNORE_WARNING)]] Void SetDropFile(std::queue<std::u8string_view> url);
+  [[nodiscard(NO_IGNORE_WARNING)]] Void SetSlot(OperatorType type);
+  bool IsCurImageFavorite();
   bool SetImageType(int type);
   void SetFirstChange(bool val);
   void SetTimeInterval(int minute);
@@ -68,7 +71,7 @@ private:
 
   class NeoTimer* const m_Timer;
   class WallBase* m_Wallpaper;
-  class WallBase* const m_Favorites;
+  class Favorite* const m_Favorites;
   class WallBase* const m_BingWallpaper;
   WallpaperHistory m_PrevImgs;
   std::stack<fs::path> m_NextImgs;

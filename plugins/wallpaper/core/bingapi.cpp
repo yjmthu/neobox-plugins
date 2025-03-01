@@ -106,7 +106,7 @@ HttpAction<bool> BingApi::CheckData()
   co_return false;
 }
 
-HttpAction<ImageInfoEx> BingApi::GetNext() {
+HttpAction<ImageInfo> BingApi::GetNext() {
   static size_t s_uCurImgIndex = 0;
 
   // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN055
@@ -114,10 +114,10 @@ HttpAction<ImageInfoEx> BingApi::GetNext() {
 
   auto result = co_await CheckData().awaiter();
   if (!result) {
-    co_return ImageInfoEx(new ImageInfo{
+    co_return {
       .ErrorMsg = u8"Bad network connection.",
       .ErrorCode = ImageInfo::NetErr
-    });
+    };
   }
 
   Locker locker(m_DataMutex);
@@ -127,11 +127,11 @@ HttpAction<ImageInfoEx> BingApi::GetNext() {
   SaveSetting();
 
   ++s_uCurImgIndex &= 0x07;
-  co_return ImageInfoEx(new ImageInfo{
+  co_return {
     .ImagePath = (imgDir / GetImageName(imgInfo)).u8string(),
     .ImageUrl = m_Setting[u8"api"].getValueString() + imgInfo[u8"urlbase"].getValueString() + u8"_UHD.jpg",
     .ErrorCode = ImageInfo::NoErr
-  });
+  };
 }
 
 void BingApi::SetJson(const YJson& json)
@@ -158,13 +158,14 @@ void BingApi::AutoDownload() {
       locker.lock();
       const fs::path imgDir = m_Setting[u8"directory"].getValueString();
       for (auto& item : m_Data->find(u8"images")->second.getArray()) {
-        ImageInfoEx ptr(new ImageInfo);
-        ptr->ImagePath = (imgDir / GetImageName(item)).u8string();
-        ptr->ImageUrl = m_Setting[u8"api"].getValueString() +
-          item[u8"urlbase"].getValueString() + u8"_UHD.jpg";
-        ptr->ErrorCode = ImageInfo::NoErr;
+        ImageInfo ptr {
+          .ImagePath = (imgDir / GetImageName(item)).u8string(),
+          .ImageUrl = m_Setting[u8"api"].getValueString() +
+            item[u8"urlbase"].getValueString() + u8"_UHD.jpg",
+          .ErrorCode = ImageInfo::NoErr
+        };
         // ------------------------------------ //
-        DownloadJob::DownloadImage(ptr, std::nullopt);
+        DownloadJob::DownloadImage(ptr).get();
       }
     }
     m_Timer->Expire();

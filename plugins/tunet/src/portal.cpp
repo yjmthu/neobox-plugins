@@ -121,13 +121,7 @@ HttpAction<Portal::Error> Portal::Init(std::u8string username, std::u8string pas
     std::cout << "Find ac_id: " << userInfo.acID << std::endl
               << "URL: " << url << std::endl;
     client.SetUrl(url);
-    res = co_await client.GetAsync(HttpLib::Callback
-      {
-        .m_ProcessCallback = [](auto current, auto total) {
-          std::cout << current << "/" << total << std::endl;
-        },
-      }
-    );
+    res = co_await client.GetAsync();
     if (res->status != 200) {
       std::cerr << "Can not go to <" << client.GetUrl() << ">\n";
       co_return Error::NetworkError;
@@ -154,7 +148,7 @@ HttpAction<Portal::Error> Portal::Init(std::u8string username, std::u8string pas
   }
 }
 
-HttpAwaiter<> Portal::GetInfo() {
+HttpAction<Portal::Error> Portal::GetInfo() {
   HttpUrl url(subHost, ApiList::info, {
     { u8"callback", u8"_" },
     { u8"ip", userInfo.ip },
@@ -163,29 +157,21 @@ HttpAwaiter<> Portal::GetInfo() {
 
   client.SetUrl(std::move(url));
 
-  HttpLib::Callback cb {
-    .m_FinishCallback = [this](auto msg, auto res) {
-      if (msg.empty() && res->status == 200) {
-        auto i = res->body.find(u8'{'), j = res->body.rfind(u8'}');
-        if (i == res->body.npos || j == res->body.npos) {
-          std::cerr << "Can not find json content.\n";
-          return;
-        }
-        YJson json(res->body.begin() + i, res->body.begin() + j + 1);
-        auto& err = json[u8"error"];
-        userInfo.isLogin = err.isString() && err.getValueString() == u8"ok";
-        std::cout << json << std::endl;
-      } else {
-        userInfo.isLogin = false;
-        std::cerr << "Connect Error: " << res->status << std::endl;
-      }
-    },
-    .m_ProcessCallback = [](auto current, auto total) {
-      std::cout << current << "/" << total << std::endl;
-    },
-  };
+  auto res = co_await client.GetAsync();
 
-  return client.GetAsync(std::move(cb));
+  if (res->status == 200) {
+    auto i = res->body.find(u8'{'), j = res->body.rfind(u8'}');
+    if (i == res->body.npos || j == res->body.npos) {
+      co_return Error::ParseError;
+    }
+    YJson json(res->body.begin() + i, res->body.begin() + j + 1);
+    auto& err = json[u8"error"];
+    userInfo.isLogin = err.isString() && err.getValueString() == u8"ok";
+    co_return Error::NoError;
+  } else {
+    userInfo.isLogin = false;
+    co_return Error::NetworkError;
+  }
 }
 
 HttpAction<Portal::Error> Portal::Login() {
@@ -193,7 +179,15 @@ HttpAction<Portal::Error> Portal::Login() {
     co_return Error::UserInfoError;
   }
   std::cout << "ip: " << std::string(userInfo.ip.begin(), userInfo.ip.end()) << std::endl;
-  auto info = co_await GetInfo();
+  auto err = co_await GetInfo().awaiter();
+  if (err == std::nullopt) {
+    co_return Error::HttpLibError;
+  }
+
+  if (err != Error::NoError) {
+    co_return *err;
+  }
+
   if (userInfo.isLogin) {
     std::cout << "Already login\n";
     co_return Error::AlreadyLogin;
@@ -255,7 +249,7 @@ HttpAction<Portal::Error> Portal::Logout() {
   client.SetUrl(std::move(url));
 
   HttpLib::Callback cb {
-    .m_ProcessCallback = [](auto current, auto total) {
+    .onProcess = [](auto current, auto total) {
       std::cout << current << "/" << total << std::endl;
     },
   };
@@ -325,14 +319,7 @@ HttpAwaiter<> Portal::SendAuth(std::u8string_view token) {
 
   client.SetUrl(std::move(url));
 
-  HttpLib::Callback cb{
-      .m_ProcessCallback =
-          [](auto current, auto total) {
-            std::cout << current << "/" << total << std::endl;
-          },
-  };
-
-  return client.GetAsync(std::move(cb));
+  return client.GetAsync();
 }
 
 HttpAwaiter<> Portal::GetToken(std::u8string_view ip) {
@@ -349,13 +336,7 @@ HttpAwaiter<> Portal::GetToken(std::u8string_view ip) {
   }, u8"https", 443);
 
   client.SetUrl(std::move(url));
-  HttpLib::Callback cb{
-      .m_ProcessCallback =
-          [](auto current, auto total) {
-            std::cout << current << "/" << total << std::endl;
-          },
-  };
-  return client.GetAsync(std::move(cb));
+  return client.GetAsync();
 }
 
 std::u8string_view Portal::ParseToken(YJson& json) {
