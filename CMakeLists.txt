@@ -14,7 +14,7 @@ if (NOT PLUGIN_MANAGER_PATH)
   set(PLUGIN_MANAGER_PATH ../Neobox/install)
 endif()
 
-project(neobox_plugins VERSION 2.4.3 LANGUAGES CXX C)
+project(neobox_plugins VERSION 2.4.7 LANGUAGES CXX C)
 
 function(load_resources plugin_name files_list)
   message("- <${plugin_name}> ${${files_list}}")
