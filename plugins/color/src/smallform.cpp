@@ -56,6 +56,9 @@ SmallForm::~SmallForm()
 
 void SmallForm::ConnectAll(class ColorBack* back)
 {
+  if (back == m_ScreenFetch) {
+    connect(m_ScreenFetch, &ScreenFetch::ScreenChanged, this, &SmallForm::DeleteSquareForm);
+  }
   connect(back, &ScreenFetch::InitShow, this, [this]() {
     AutoPosition(QCursor::pos());
     show();
@@ -131,44 +134,72 @@ void SmallForm::OnMouseWheel(QWheelEvent *event)
     return;
   }
 
-  constexpr int delta = 20;
   const int value = numDegrees.y();
 
   if (value > 0) {
-    if (!m_SquareForm) {
-      QPoint leftTop(point.x() - delta, point.y() - delta);
-      leftTop -= m_ScreenFetch->pos();
-      m_ScreenFetch->TransformPoint(leftTop);
-      QPoint rightBottom(delta * 2, delta * 2);
-      m_ScreenFetch->TransformPoint(rightBottom);
-      QRect rect(leftTop, QSize(rightBottom.x(), rightBottom.ry()));
-      m_SquareForm = new SquareForm(m_ScreenFetch->m_Pixmap.copy(rect), point - m_ScreenFetch->pos());
-      m_SquareForm->setParent(m_ScreenFetch);
-      ConnectAll(m_SquareForm);
-      m_SquareForm->show();
-      m_ScaleTimes = 1;
-      this->raise();
-    } else {
-      if (m_ScaleTimes + value <= 4) {
-        m_ScaleTimes += value;
-        m_SquareForm->SetScaleSize(m_ScaleTimes);
-      }
-    }
+    ScaleUp(value, point);
   } else if (value < 0) {
-    if (m_ScaleTimes + value > 0) {
-      m_ScaleTimes += value;
-      m_SquareForm->SetScaleSize(m_ScaleTimes);
-    } else {
-      m_ScaleTimes = 0;
-      if (m_SquareForm) {
-        setParent(m_ScreenFetch);
-        delete m_SquareForm;
-        m_SquareForm = nullptr;
-      }
-    }
+    ScaleDown(value);
   }
 
   event->accept();
+}
+
+
+void SmallForm::ScaleUp(short value, QPoint point)
+{
+  if (m_SquareForm) {
+    if (m_ScaleTimes + value <= 4) {
+      m_ScaleTimes += value;
+      m_SquareForm->SetScaleSize(m_ScaleTimes);
+    }
+  } else {
+    CreateSquareForm(point);
+  }
+}
+
+
+void SmallForm::ScaleDown(short value) {
+  if (!m_SquareForm) return;
+
+  if (m_ScaleTimes + value > 0) {
+    m_ScaleTimes += value;
+    m_SquareForm->SetScaleSize(m_ScaleTimes);
+  } else {
+    DeleteSquareForm();
+  }
+}
+
+void SmallForm::CreateSquareForm(QPoint point)
+{
+  if (m_SquareForm) {
+    return;
+  }
+
+  constexpr int delta = 20;
+  QPoint leftTop(point.x() - delta, point.y() - delta);
+  leftTop -= m_ScreenFetch->pos();
+  m_ScreenFetch->TransformPoint(leftTop);
+  QPoint rightBottom(delta * 2, delta * 2);
+  m_ScreenFetch->TransformPoint(rightBottom);
+  QRect rect(leftTop, QSize(rightBottom.x(), rightBottom.ry()));
+  m_SquareForm = new SquareForm(m_ScreenFetch->m_Pixmap.copy(rect), point - m_ScreenFetch->pos());
+  m_SquareForm->setParent(m_ScreenFetch);
+  ConnectAll(m_SquareForm);
+  m_SquareForm->show();
+  m_ScaleTimes = 1;
+  this->raise();
+}
+
+void SmallForm::DeleteSquareForm()
+{
+  m_ScaleTimes = 0;
+
+  if (m_SquareForm) {
+    setParent(m_ScreenFetch);
+    delete m_SquareForm;
+    m_SquareForm = nullptr;
+  }
 }
 
 void SmallForm::SetColor(const QColor& color)

@@ -29,6 +29,10 @@ private:
   void AutoPosition(QPoint point);
   void QuitHook(bool succeed);
   void ConnectAll(class ColorBack* back);
+  void ScaleUp(short value, QPoint point);
+  void ScaleDown(short value);
+  void CreateSquareForm(QPoint point);
+  void DeleteSquareForm();
 public:
   QColor m_Color;
   static SmallForm* m_Instance;

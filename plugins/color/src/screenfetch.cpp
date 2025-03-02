@@ -24,5 +24,6 @@ void ScreenFetch::leaveEvent(QEvent* event) {
 
   setGeometry(screen->geometry());
 
+  emit ScreenChanged();
   emit InitShow();
 }
