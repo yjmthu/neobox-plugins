@@ -3,9 +3,6 @@
 #include <neobox/pluginmgr.h>
 #include <speedbox.hpp>
 
-#include <thread>
-#include <chrono>
-
 #include <QTimer>
 
 using namespace std::literals;
