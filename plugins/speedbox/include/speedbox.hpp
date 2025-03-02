@@ -10,6 +10,7 @@
 namespace fs = std::filesystem;
 
 class SpeedBox : public WidgetBase {
+
   Q_OBJECT
 
 private:
@@ -71,6 +72,7 @@ protected:
   void LoadScreen(int index);
 #ifdef _WIN32
   void SetHideFullScreen();
+  void UnSetHideFullScreen();
 #else
   bool IsCurreenWindowFullScreen();
 #endif
@@ -79,6 +81,7 @@ protected:
   void UpdateNetCard(QAction* action, bool checked);
 signals:
   void TimeOut();
+  void NetCardChanged();
 };
 
 #endif

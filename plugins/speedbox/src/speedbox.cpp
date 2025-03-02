@@ -41,6 +41,8 @@ static SkinApi* const g_SkinApis[] = {
   newSkin, newSkin1, newSkin2, newSkin3, newSkin4, newSkin5, newSkin6
 };
 
+// static SkinApi* const g_SkinApis[7] = {};
+
 const std::vector<std::u8string> NeoSpeedboxPlg::m_DefaultSkins = {
     u8"简简单单",
     u8"经典火绒",
@@ -56,12 +58,13 @@ SpeedBox::SpeedBox(NeoSpeedboxPlg* plugin, SpeedBoxCfg& settings, MenuBase* netc
     , m_PluginObject(plugin)
     , m_Settings(settings)
     , m_NetSpeedHelper(*plugin->m_NetSpeedHelper)
-    , m_ProcessForm(m_Settings.GetProgressMonitor() ?new ProcessForm(this) : nullptr)
+    , m_ProcessForm(m_Settings.GetProgressMonitor() ? new ProcessForm(this) : nullptr)
     , m_NetCardMenu(*netcardMenu)
     , m_CentralWidget(nullptr)
     , m_SkinDll(nullptr)
     , m_Timer(NeoTimer::New())
     , m_TrayFrame(nullptr)
+    , m_AppBarData(nullptr)
     , m_Animation(new QPropertyAnimation(this, "geometry"))
 {
   SetWindowMode();
@@ -80,8 +83,7 @@ SpeedBox::~SpeedBox() {
   delete m_CentralWidget;
 #ifdef _WIN32
   FreeLibrary(m_SkinDll);
-  SHAppBarMessage(ABM_REMOVE, reinterpret_cast<APPBARDATA*>(m_AppBarData));
-  delete reinterpret_cast<APPBARDATA*>(m_AppBarData);
+  UnSetHideFullScreen();
 #else
   // linux平台需要判断指针非零
   if (m_SkinDll) dlclose(m_SkinDll);
@@ -94,11 +96,13 @@ SpeedBox::~SpeedBox() {
 void SpeedBox::InitShow(const PluginObject::FollowerFunction& callback) {
   show();
 
-  m_Animation->setDuration(100);
-  m_Animation->setTargetObject(this);
-  connect(m_Animation, &QPropertyAnimation::finished, this, [this]() {
-    m_Settings.SetPosition(YJson::A{x(), y()});
-  });
+  if (m_Animation) {
+    m_Animation->setDuration(100);
+    m_Animation->setTargetObject(this);
+    connect(m_Animation, &QPropertyAnimation::finished, this, [this]() {
+      m_Settings.SetPosition(YJson::A{x(), y()});
+    });
+  }
 
   UpdateNetCardMenu();
 
@@ -202,7 +206,9 @@ void SpeedBox::LoadCurrentSkin() {
       mgr->ShowMsg("皮肤文件找不到！");
     }
   }
-  m_CentralWidget = g_SkinApis[id](this, m_NetSpeedHelper.m_TrafficInfo);
+  if (g_SkinApis[id]) {
+    m_CentralWidget = g_SkinApis[id](this, m_NetSpeedHelper.m_TrafficInfo);
+  }
 }
 
 #ifdef _WIN32
@@ -214,6 +220,11 @@ void SpeedBox::SetHideFullScreen() {
     0, 0, 0
   };
   SHAppBarMessage(ABM_NEW, reinterpret_cast<APPBARDATA*>(m_AppBarData));
+}
+
+void SpeedBox::UnSetHideFullScreen() {
+  SHAppBarMessage(ABM_REMOVE, reinterpret_cast<APPBARDATA*>(m_AppBarData));
+  delete reinterpret_cast<APPBARDATA*>(m_AppBarData);
 }
 #else
 bool SpeedBox::IsCurreenWindowFullScreen() {
@@ -364,6 +375,8 @@ bool SpeedBox::nativeEvent(const QByteArray& eventType,
 static constexpr int delta = 1;
 
 void SpeedBox::enterEvent(QEnterEvent* event) {
+  if (!m_Animation) return;
+
   auto const& rtScreen = m_ScreenGeometry;
   auto rtForm = this->frameGeometry();
   m_Animation->setStartValue(rtForm);
@@ -390,6 +403,8 @@ void SpeedBox::enterEvent(QEnterEvent* event) {
 }
 
 void SpeedBox::leaveEvent(QEvent* event) {
+  if (!m_Animation) return;
+
   auto const& rtScreen = m_ScreenGeometry;
   auto rtForm = this->frameGeometry();
   m_Animation->setStartValue(rtForm);
@@ -462,12 +477,16 @@ void SpeedBox::InitNetCard()
     static int count = 10;
     if (--count == 0) {
       m_NetSpeedHelper.UpdateAdaptersAddresses();
-      UpdateNetCardMenu();
       count = 10;
+      emit NetCardChanged();
     }
 #endif
     emit TimeOut();
   });
+
+#ifdef _WIN32
+  connect(this, &SpeedBox::NetCardChanged, this, &SpeedBox::UpdateNetCardMenu);
+#endif
 
   connect(this, &SpeedBox::TimeOut, this, [this] {
 #ifndef _WIN32

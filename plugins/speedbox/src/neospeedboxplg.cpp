@@ -477,7 +477,7 @@ void PluginName::LoadScreenIndexMenu(MenuBase* parent)
 
   updateMenu();
 
-  QObject::connect(group, &QActionGroup::triggered, [this, group](QAction* action){
+  QObject::connect(group, &QActionGroup::triggered, m_Speedbox, [this, group](QAction* action){
     auto lastScreen = m_Settings.GetScreenIndex();
     if (lastScreen == group->actions().indexOf(action)) return;
     auto index = group->actions().indexOf(action);
@@ -485,6 +485,7 @@ void PluginName::LoadScreenIndexMenu(MenuBase* parent)
     mgr->ShowMsg("设置成功！");
   });
 
-  QObject::connect(qApp, &QGuiApplication::screenAdded, updateMenu);
-  QObject::connect(qApp, &QGuiApplication::screenRemoved, updateMenu);
+  // Very important to set SpeedBox as the receiver of the signal, when plugin is destroyed, the signal will be disconnected.
+  QObject::connect(qApp, &QGuiApplication::screenAdded, m_Speedbox, updateMenu);
+  QObject::connect(qApp, &QGuiApplication::screenRemoved, m_Speedbox, updateMenu);
 }
