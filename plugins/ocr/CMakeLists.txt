@@ -27,7 +27,7 @@ if(WIN32)
   endif()
 endif()
 
-file(GLOB source_files src/*.cpp)
+file(GLOB source_files src/*.cpp include/*.hpp)
 
 set(qt_shared_files Qt6::Core Qt6::Widgets Qt6::Gui)
 

@@ -1,7 +1,7 @@
 #ifndef NEOOCR_H
 #define NEOOCR_H
 
-#include <functional>
+#include <neobox/httplib.h>
 #include <string>
 #include <filesystem>
 #include <queue>
@@ -20,10 +20,11 @@ struct OcrResult {
 
 class NeoOcr {
 public:
+  typedef HttpAction<std::u8string> String;
   enum class Engine { Windows, Tesseract, Paddle, Other };
   NeoOcr(class OcrConfig& settings);
   ~NeoOcr();
-  std::u8string GetText(QImage image);
+  [[nodiscard]] String GetText(QImage image);
   std::vector<OcrResult> GetTextEx(const QImage& image);
   void InitLanguagesList();
   void AddLanguages(const std::vector<std::u8string>& urls);
@@ -34,8 +35,8 @@ public:
   static std::vector<std::pair<std::wstring, std::wstring>> GetLanguages();
 #endif
 private:
-  std::u8string OcrWindows(const QImage& image);
-  std::u8string OcrTesseract(const QImage& image);
+  [[nodiscard]] String OcrWindows(const QImage& image);
+  [[nodiscard]] String OcrTesseract(const QImage& image);
 private:
   OcrConfig& m_Settings;
   std::u8string GetLanguageName(const std::u8string& url);

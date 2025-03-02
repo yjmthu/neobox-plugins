@@ -1,5 +1,5 @@
-#include <neoocrplg.h>
-#include <neoocr.h>
+#include <neoocrplg.hpp>
+#include <neoocr.hpp>
 #include <neobox/pluginmgr.h>
 #include <neobox/neomenu.hpp>
 #include <screenfetch.h>
@@ -31,7 +31,6 @@
 
 #include <filesystem>
 #include <ranges>
-#include <queue>
 
 #define PluginName NeoOcrPlg
 #include <neobox/pluginexport.cpp>
@@ -44,7 +43,8 @@ using namespace std::literals;
  */
 
 PluginName::PluginName(YJson& settings)
-  : PluginObject(InitSettings(settings), u8"neoocrplg", u8"文字识别")
+  : QObject()
+  , PluginObject(InitSettings(settings), u8"neoocrplg", u8"文字识别")
   , m_Settings(settings)
   , m_Ocr(new NeoOcr(m_Settings))
   , m_OcrDialog(nullptr)
@@ -89,14 +89,27 @@ void PluginName::InitFunctionMap() {
         busy = false;
         if (!box->HaveCatchImage())
           return;
-        std::u8string str = m_Ocr->GetText(std::move(image));
-        if (m_Settings.GetWriteClipboard()) {
-          QGuiApplication::clipboard()->setText(QString::fromUtf8(str.data(), str.size()));
-          mgr->ShowMsg("复制数据成功");
+        std::u8string result;
+        connect(this, &PluginName::RecognizeFinished, &loop, &QEventLoop::quit);
+        m_Ocr->GetText(std::move(image)).then([this, &result](std::optional<std::u8string> str) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          if (!str) {
+            mgr->ShowMsg("识别失败");
+            emit RecognizeFinished();
+            return;
+          }
+          if (m_Settings.GetWriteClipboard()) {
+            QGuiApplication::clipboard()->setText(QString::fromUtf8(str->data(), str->size()));
+            mgr->ShowMsg("复制数据成功");
+          }
+          result = std::move(*str);
+          emit RecognizeFinished();
+        });
+        loop.exec();
+        if (!result.empty() && m_Settings.GetShowWindow()) {
+          SendBroadcast(PluginEvent::U8string, &result);
         }
-        if (m_Settings.GetShowWindow()) {
-          SendBroadcast(PluginEvent::U8string, &str);
-        }
+
       }, PluginEvent::Void},
     },
     {u8"setDataDir",

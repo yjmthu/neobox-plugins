@@ -4,11 +4,15 @@
 #include <neobox/pluginobject.h>
 #include <ocrconfig.h>
 
+#include <QObject>
+
 class QWidget;
 class QVBoxLayout;
 
-class NeoOcrPlg: public PluginObject
+class NeoOcrPlg: public QObject, public PluginObject
 {
+  Q_OBJECT
+
 protected:
   class QAction* InitMenuAction() override;
   void InitFunctionMap() override;
@@ -29,6 +33,8 @@ private:
   class OcrDialog* m_OcrDialog;
   QAction* m_MainMenuAction;
   class NeoOcr* const m_Ocr;
+signals:
+  void RecognizeFinished();
 };
 
 #endif // NEOOCRPLG_H

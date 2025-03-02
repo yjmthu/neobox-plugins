@@ -2,7 +2,7 @@
 #define OCRDIALOG_H
 
 #include <neobox/widgetbase.hpp>
-#include <neoocr.h>
+#include <neoocr.hpp>
 
 class OcrDialog: public WidgetBase {
 public:
