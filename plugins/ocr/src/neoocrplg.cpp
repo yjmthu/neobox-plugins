@@ -90,26 +90,29 @@ void PluginName::InitFunctionMap() {
         if (!box->HaveCatchImage())
           return;
         std::u8string result;
-        connect(this, &PluginName::RecognizeFinished, &loop, &QEventLoop::quit);
-        m_Ocr->GetText(std::move(image)).then([this, &result](std::optional<std::u8string> str) {
+        connect(this, &PluginName::RecognizeFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
+        auto res = m_Ocr->GetText(std::move(image));
+        res.then([this, &result](std::optional<std::u8string> str) {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          if (!str) {
+          if (!str || str->empty()) {
             mgr->ShowMsg("识别失败");
-            emit RecognizeFinished();
-            return;
+          } else {
+            result = std::move(*str);
           }
-          if (m_Settings.GetWriteClipboard()) {
-            QGuiApplication::clipboard()->setText(QString::fromUtf8(str->data(), str->size()));
-            mgr->ShowMsg("复制数据成功");
-          }
-          result = std::move(*str);
           emit RecognizeFinished();
         });
         loop.exec();
-        if (!result.empty() && m_Settings.GetShowWindow()) {
-          SendBroadcast(PluginEvent::U8string, &result);
-        }
 
+        if (!result.empty()) {
+          if (m_Settings.GetWriteClipboard()) {
+            QGuiApplication::clipboard()->setText(QString::fromUtf8(result.data(), result.size()));
+            mgr->ShowMsg("复制数据成功");
+          }
+
+          if (m_Settings.GetShowWindow()) {
+            SendBroadcast(PluginEvent::U8string, &result);
+          }
+        }
       }, PluginEvent::Void},
     },
     {u8"setDataDir",

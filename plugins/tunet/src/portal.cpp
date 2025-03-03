@@ -201,16 +201,22 @@ HttpAction<Portal::Error> Portal::Login() {
     co_return Error::TokenError;
   }
 
-  res = co_await SendAuth(ParseToken(*json));
+  auto token = ParseToken(*json);
+  res = co_await SendAuth(token);
   json = ParseJson(res);
   
-  if (!json) {
+  if (!json || !json->isObject()) {
     std:: cerr << "Can not auth.\n";
     co_return Error::AuthError;
   }
 
-  userInfo.isLogin = true;
   std::cout << *json << std::endl;
+
+  auto status = (*json)[u8"error"];
+  if (status != u8"ok") {
+    co_return Error::AuthError;
+  }
+  userInfo.isLogin = true;
 
   co_return Error::NoError;
 }
