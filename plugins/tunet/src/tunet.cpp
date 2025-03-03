@@ -61,7 +61,7 @@ void PluginName::InitFunctionMap() {
         // LogInOut(false, false).get();
         QEventLoop loop;
         connect(this, &PluginName::LogoutFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
-        LogInOut(false, false).then([this] { emit LogoutFinished(); });
+        LogInOut(false, false).then([this] { emit LogoutFinished(); mgr->ShowMsg("1111111111111"); });
         loop.exec();
       }, PluginEvent::Void},
     },
@@ -149,25 +149,25 @@ void PluginName::ShowMsg(Portal::Error err, const char* showSucc) {
     if (showSucc) mgr->ShowMsg(showSucc);
     break;
   case Portal::Error::AlreadyLogin:
-    if (showSucc) mgr->ShowMsg("已经登录。");
+    if (showSucc) mgr->ShowMsg("已经登录");
     break;
   case Portal::Error::AlreadyLogout:
-    if (showSucc) mgr->ShowMsg("已经注销。");
+    if (showSucc) mgr->ShowMsg("已经注销");
     break;
   case Portal::Error::NetworkError:
-    mgr->ShowMsg("网络错误。");
+    mgr->ShowMsg("网络错误");
     break;
   case Portal::Error::UserInfoError:
-    mgr->ShowMsg("用户信息错误。");
+    mgr->ShowMsg("用户信息错误");
     break;
   case Portal::Error::ParseError:
-    mgr->ShowMsg("解析错误。");
+    mgr->ShowMsg("解析错误");
     break;
   case Portal::Error::TokenError:
-    mgr->ShowMsg("获取Token失败。");
+    mgr->ShowMsg("获取Token失败");
     break;
   case Portal::Error::AuthError:
-    mgr->ShowMsg("认证失败。");
+    mgr->ShowMsg("认证失败");
     break;
   default:
     mgr->ShowMsg("其他错误");
@@ -179,11 +179,11 @@ HttpAction<void> PluginName::LogInOut(bool login, bool silent) {
   auto res = co_await c.awaiter();
 
   if (res == std::nullopt) {
-    mgr->ShowMsg("初始化失败，请联系开发者。");
+    mgr->ShowMsg("初始化失败，请联系开发者");
     co_return;
   }
 
-  ShowMsg(*res, silent ? nullptr : "初始化成功。");
+  ShowMsg(*res, nullptr);
   if (*res != Portal::NoError) {
     co_return;
   }
@@ -194,11 +194,11 @@ HttpAction<void> PluginName::LogInOut(bool login, bool silent) {
     res = co_await m_Portal->Logout().awaiter();
   
   if (res == std::nullopt) {
-    mgr->ShowMsg(login ? "登入失败，请联系开发者。" : "登出失败，请联系开发者。");
+    mgr->ShowMsg(login ? "登入失败，请联系开发者" : "登出失败，请联系开发者");
     co_return;
   }
 
-  ShowMsg(*res, silent ? nullptr : (login ? "登入成功。" : "登出成功。"));
+  ShowMsg(*res, silent ? nullptr : (login ? "登入成功" : "登出成功"));
   if (*res != Portal::NoError) {
     co_return;
   }
