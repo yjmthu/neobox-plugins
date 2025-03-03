@@ -8,6 +8,7 @@
 
 #include <QAction>
 #include <QEventLoop>
+#include <QMessageBox>
 
 #define PluginName Thunet
 #include <neobox/pluginexport.cpp>
@@ -52,7 +53,8 @@ void PluginName::InitFunctionMap() {
         // LogInOut(true, false).get();
         QEventLoop loop;
         connect(this, &PluginName::LoginFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
-        LogInOut(true, false).then([this] { emit LoginFinished(); });
+        auto action = LogInOut(true, false);
+        action.then([this] { emit LoginFinished(); });
         loop.exec();
       }, PluginEvent::Void},
     },
@@ -61,7 +63,8 @@ void PluginName::InitFunctionMap() {
         // LogInOut(false, false).get();
         QEventLoop loop;
         connect(this, &PluginName::LogoutFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
-        LogInOut(false, false).then([this] { emit LogoutFinished(); mgr->ShowMsg("1111111111111"); });
+        auto action = LogInOut(false, false);
+        action.then([this] { emit LogoutFinished(); });
         loop.exec();
       }, PluginEvent::Void},
     },
@@ -175,6 +178,13 @@ void PluginName::ShowMsg(Portal::Error err, const char* showSucc) {
 }
 
 HttpAction<void> PluginName::LogInOut(bool login, bool silent) {
+  static bool isRunning = false;
+  if (isRunning) {
+    mgr->ShowMsg("正在运行中，请稍后");
+    co_return;
+  }
+  struct Guard { ~Guard() { isRunning = false; } } guard;
+
   auto c = m_Portal->Init(m_Settings->GetUsername(), m_Settings->GetPassword());
   auto res = co_await c.awaiter();
 

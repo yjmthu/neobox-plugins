@@ -127,7 +127,7 @@ HttpAction<Portal::Error> Portal::Init(std::u8string username, std::u8string pas
       co_return Error::NetworkError;
     }
   } else {
-    std::cerr << "Can not find ac_id.\n";
+    std::cerr << res->body << "Can not find ac_id.\n";
     co_return Error::ParseError;
   }
 
