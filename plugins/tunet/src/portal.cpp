@@ -184,7 +184,7 @@ HttpAction<Portal::Error> Portal::Login() {
     co_return Error::HttpLibError;
   }
 
-  if (err != Error::NoError) {
+  if (*err != Error::NoError) {
     co_return *err;
   }
 
@@ -192,7 +192,6 @@ HttpAction<Portal::Error> Portal::Login() {
     std::cout << "Already login\n";
     co_return Error::AlreadyLogin;
   }
-  userInfo.isLogin = true;
 
   auto res = co_await GetToken(userInfo.ip);
   auto json = ParseJson(res);
@@ -210,6 +209,7 @@ HttpAction<Portal::Error> Portal::Login() {
     co_return Error::AuthError;
   }
 
+  userInfo.isLogin = true;
   std::cout << *json << std::endl;
 
   co_return Error::NoError;
@@ -220,8 +220,6 @@ HttpAction<Portal::Error> Portal::Logout() {
     std::cout << "Already logout\n";
     co_return Error::AlreadyLogout;
   }
-
-  userInfo.isLogin = false;
 
   if (!userInfo.IsInfoValid()) {
     co_return Error::UserInfoError;
@@ -262,6 +260,7 @@ HttpAction<Portal::Error> Portal::Logout() {
     co_return Error::NetworkError;
   }
 
+  userInfo.isLogin = false;
   co_return Error::NoError;
 }
 
