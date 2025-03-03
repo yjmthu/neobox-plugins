@@ -35,9 +35,10 @@ private:
   static const std::vector<std::u8string> m_DefaultSkins;
   class SpeedBox* m_Speedbox;
   MenuBase* m_ChooseSkinMenu;
+  MenuBase* m_ChooseScreenMenu;
   MenuBase* m_RemoveSkinMenu;
   MenuBase* m_NetCardMenu;
-  class QActionGroup* m_ChooseSkinGroup;
+  class QActionGroup* m_ChooseSkinGroup, *m_ChooseScreenGroup;
   std::function<void(PluginEvent, void*)> m_ActiveWinodow;
 };
 

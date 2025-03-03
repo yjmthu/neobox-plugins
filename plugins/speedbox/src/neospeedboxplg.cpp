@@ -39,6 +39,12 @@ PluginName::PluginName(YJson& settings)
   , m_Settings(settings)
   , m_NetSpeedHelper(new NetSpeedHelper(m_Settings.GetNetCardDisabled()))
   , m_Speedbox(nullptr)
+  , m_ChooseSkinMenu(nullptr)
+  , m_ChooseScreenMenu(nullptr)
+  , m_RemoveSkinMenu(nullptr)
+  , m_NetCardMenu(nullptr)
+  , m_ChooseSkinGroup(nullptr)
+  , m_ChooseScreenGroup(nullptr)
 {
   // LoadFonts();
   InitFunctionMap();
@@ -444,13 +450,14 @@ void PluginName::AddSkin(const QString& name, const fs::path& path)
 
 void PluginName::LoadScreenIndexMenu(MenuBase* parent)
 {
-  auto menu = new MenuBase(parent);
-  auto group = new QActionGroup(menu);
-  parent->addAction("屏幕选择")->setMenu(menu);
+  m_ChooseScreenMenu = new MenuBase(parent);
+  parent->addAction("屏幕选择")->setMenu(m_ChooseScreenMenu);
 
-  auto updateMenu = [this, menu, group] () {
-    menu->clear();
-    group->setExclusive(false);
+  auto updateMenu = [this] () {
+    delete m_ChooseScreenGroup;
+    m_ChooseScreenMenu->clear();
+
+    m_ChooseScreenGroup = new QActionGroup(m_ChooseScreenMenu);
 
     auto primaryScreen = QGuiApplication::primaryScreen();
     auto allScreens = QGuiApplication::screens();
@@ -463,27 +470,36 @@ void PluginName::LoadScreenIndexMenu(MenuBase* parent)
 
     for (int i = 0; i != allScreens.size(); ++i) {
       auto const geometry = allScreens[i]->geometry();
-      auto const action = menu->addAction("屏幕：" + QString::number(i));
+      auto const action = m_ChooseScreenMenu->addAction("屏幕：" + QString::number(i));
       action->setCheckable(true);
       action->setChecked(i == currentScreen);
       action->setToolTip(QStringLiteral("%1(x: %2, y: %3, w: %4, h: %5)")
         .arg(allScreens[i]->name())
         .arg(geometry.x()).arg(geometry.y()).arg(geometry.width()).arg(geometry.height()));
-      group->addAction(action);
+      m_ChooseScreenGroup->addAction(action);
     }
 
-    group->setExclusive(true);
+    m_ChooseScreenGroup->setExclusive(true);
+
+    QObject::connect(m_ChooseScreenGroup, &QActionGroup::triggered, m_Speedbox, [this](QAction* action){
+      auto lastScreen = m_Settings.GetScreenIndex();
+      auto thisAction = m_ChooseScreenGroup->actions().indexOf(action);
+      if (lastScreen == thisAction) return;
+      m_Speedbox->UpdateScreenIndex(thisAction);
+      mgr->ShowMsg("设置成功！");
+    });
+
   };
 
   updateMenu();
 
-  QObject::connect(group, &QActionGroup::triggered, m_Speedbox, [this, group](QAction* action){
-    auto lastScreen = m_Settings.GetScreenIndex();
-    if (lastScreen == group->actions().indexOf(action)) return;
-    auto index = group->actions().indexOf(action);
-    m_Speedbox->UpdateScreenIndex(group->actions().indexOf(action));
-    mgr->ShowMsg("设置成功！");
-  });
+  QObject::connect(m_Speedbox, &SpeedBox::ScreenChanged, m_Speedbox, [this] (int index) {
+    if (!m_ChooseScreenGroup) return;
+
+    auto actions = m_ChooseScreenGroup->actions();
+    if (index < 0 || index >= actions.size()) return;
+    actions[index]->setChecked(true);
+  }, Qt::DirectConnection);
 
   // Very important to set SpeedBox as the receiver of the signal, when plugin is destroyed, the signal will be disconnected.
   QObject::connect(qApp, &QGuiApplication::screenAdded, m_Speedbox, updateMenu);

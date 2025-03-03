@@ -326,6 +326,13 @@ void SpeedBox::mousePressEvent(QMouseEvent* event) {
 void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     m_Settings.SetPosition(YJson::A{x(), y()});
+    auto screen = QApplication::screenAt(QCursor::pos());
+    auto index = QApplication::screens().indexOf(screen);
+    if (m_Settings.GetScreenIndex() != index) {
+      m_ScreenGeometry = screen->geometry();
+      m_Settings.SetScreenIndex(index);
+      emit ScreenChanged(index);
+    }
   }
   this->WidgetBase::mouseReleaseEvent(event);
 }
@@ -462,7 +469,7 @@ void SpeedBox::UpdateScreenIndex(int index)
 {
   LoadScreen(index);
 
-  auto pos = m_ScreenGeometry.topLeft() + QPoint(100, 100);
+  auto pos = m_ScreenGeometry.center() - QPoint(width() / 2, height() / 2);
   move(pos);
   m_Settings.SetPosition(YJson::A { pos.x(), pos.y() }, false);
 

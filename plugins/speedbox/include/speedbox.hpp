@@ -82,6 +82,7 @@ protected:
 signals:
   void TimeOut();
   void NetCardChanged();
+  void ScreenChanged(int index);
 };
 
 #endif
