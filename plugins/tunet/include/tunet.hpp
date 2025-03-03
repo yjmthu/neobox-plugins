@@ -26,6 +26,9 @@ private:
   class TuNetCfg* const m_Settings;
   Portal* const m_Portal;
   QAction* m_MainMenuAction;
+signals:
+  void LoginFinished();
+  void LogoutFinished();
 };
 
 #endif // THUNET_H

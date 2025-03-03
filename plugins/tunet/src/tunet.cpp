@@ -7,6 +7,7 @@
 #include <neobox/neotimer.h>
 
 #include <QAction>
+#include <QEventLoop>
 
 #define PluginName Thunet
 #include <neobox/pluginexport.cpp>
@@ -30,13 +31,10 @@ PluginName::PluginName(YJson& settings)
   InitFunctionMap();
 
   if (m_Settings->GetAutoLogin()) {
-    auto const delay = m_Settings->GetDelay();
+    auto delay = m_Settings->GetDelay();
+    delay = delay < 0 ? 0 : delay;
     auto cb = [this] { LogInOut(true, true).get(); };
-    if (delay > 0) {
-      NeoTimer::SingleShot(std::chrono::seconds(delay), cb);
-    } else {
-      cb();
-    }
+    NeoTimer::SingleShot(std::chrono::seconds(delay), cb);
   }
 }
 
@@ -51,12 +49,20 @@ void PluginName::InitFunctionMap() {
   m_PluginMethod = {
     {u8"login",
       {u8"登录网络", u8"登录清华大学校园网", [this](PluginEvent, void*) {
-        LogInOut(true, false).get();
+        // LogInOut(true, false).get();
+        QEventLoop loop;
+        connect(this, &PluginName::LoginFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
+        LogInOut(true, false).then([this] { emit LoginFinished(); });
+        loop.exec();
       }, PluginEvent::Void},
     },
     {u8"logout",
       {u8"登出网络", u8"登出清华大学校园网", [this](PluginEvent, void*) {
-        LogInOut(false, false).get();
+        // LogInOut(false, false).get();
+        QEventLoop loop;
+        connect(this, &PluginName::LogoutFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
+        LogInOut(false, false).then([this] { emit LogoutFinished(); });
+        loop.exec();
       }, PluginEvent::Void},
     },
     {u8"autoLogin",
