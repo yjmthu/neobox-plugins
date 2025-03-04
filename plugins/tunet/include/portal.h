@@ -13,6 +13,7 @@ class Portal {
 
   std::u8string const mainHost = u8"tsinghua.edu.cn";
   std::u8string const subHost = u8"auth4." + mainHost;
+  std::u8string const loginHost = u8"login." + mainHost;
 
 public:
   Portal()

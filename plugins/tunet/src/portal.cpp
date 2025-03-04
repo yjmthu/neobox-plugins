@@ -86,15 +86,13 @@ std::optional<YJson> Portal::ParseJson(HttpResponse* res) {
 }
 
 HttpAction<Portal::Error> Portal::Init(std::u8string username, std::u8string password) {
-  if (userInfo.IsInfoValid() && username == userInfo.username && password == userInfo.password) {
-    co_return Error::NoError;
-  }
-
   userInfo.username = std::move(username);
   userInfo.password = std::move(password);
   
   UnicodeSearch search;
   
+  client.SetUrl(HttpUrl(loginHost, u8"/"));
+
   auto res = co_await client.GetAsync();
 
   if (res->status != 200) {
@@ -127,7 +125,9 @@ HttpAction<Portal::Error> Portal::Init(std::u8string username, std::u8string pas
       co_return Error::NetworkError;
     }
   } else {
-    std::cerr << res->body << "Can not find ac_id.\n";
+#ifdef _DEBUG
+    std::cerr << "ERROR URL: <" << client.GetUrl() << ">\n BODY: <\n" << res->body << "\n>\nCan not find ac_id.\n";
+#endif
     co_return Error::ParseError;
   }
 
@@ -223,8 +223,19 @@ HttpAction<Portal::Error> Portal::Login() {
 }
 
 HttpAction<Portal::Error> Portal::Logout() {
+  auto err = co_await GetInfo().awaiter();
+  if (err == std::nullopt) {
+    co_return Error::HttpLibError;
+  }
+
+  if (*err != Error::NoError) {
+#ifdef _DEBUG
+    std::cout << "Get info error: " << static_cast<int>(*err) << std::endl;
+#endif
+    co_return *err;
+  }
+
   if (!userInfo.isLogin) {
-    std::cout << "Already logout\n";
     co_return Error::AlreadyLogout;
   }
 

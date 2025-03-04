@@ -185,16 +185,20 @@ HttpAction<void> PluginName::LogInOut(bool login, bool silent) {
   }
   struct Guard { ~Guard() { isRunning = false; } } guard;
 
-  auto c = m_Portal->Init(m_Settings->GetUsername(), m_Settings->GetPassword());
-  auto res = co_await c.awaiter();
+  std::optional<Portal::Error> res = std::nullopt;
+
+  res = co_await m_Portal->Init(m_Settings->GetUsername(), m_Settings->GetPassword()).awaiter();
 
   if (res == std::nullopt) {
-    mgr->ShowMsg("初始化失败，请联系开发者");
+    mgr->ShowMsg("协程运行失败，请联系开发者");
     co_return;
   }
 
   ShowMsg(*res, nullptr);
   if (*res != Portal::NoError) {
+#ifdef _DEBUG
+    std::cout << "State 1 error: " << static_cast<int>(*res) << std::endl;
+#endif
     co_return;
   }
 
@@ -209,7 +213,4 @@ HttpAction<void> PluginName::LogInOut(bool login, bool silent) {
   }
 
   ShowMsg(*res, silent ? nullptr : (login ? "登入成功" : "登出成功"));
-  if (*res != Portal::NoError) {
-    co_return;
-  }
 }
