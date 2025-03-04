@@ -53,8 +53,7 @@ void PluginName::InitFunctionMap() {
         // LogInOut(true, false).get();
         QEventLoop loop;
         connect(this, &PluginName::LoginFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
-        auto action = LogInOut(true, false);
-        action.then([this] { emit LoginFinished(); });
+        auto&& action = LogInOut(true, false).then([this] { emit LoginFinished(); });
         loop.exec();
       }, PluginEvent::Void},
     },
@@ -63,8 +62,7 @@ void PluginName::InitFunctionMap() {
         // LogInOut(false, false).get();
         QEventLoop loop;
         connect(this, &PluginName::LogoutFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
-        auto action = LogInOut(false, false);
-        action.then([this] { emit LogoutFinished(); });
+        auto&& action = LogInOut(false, false).then([this] { emit LogoutFinished(); });
         loop.exec();
       }, PluginEvent::Void},
     },
