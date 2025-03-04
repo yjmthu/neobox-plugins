@@ -162,6 +162,7 @@ HttpAction<Portal::Error> Portal::GetInfo() {
   if (res->status == 200) {
     auto i = res->body.find(u8'{'), j = res->body.rfind(u8'}');
     if (i == res->body.npos || j == res->body.npos) {
+      std::cout << res->body << std::endl;
       co_return Error::ParseError;
     }
     YJson json(res->body.begin() + i, res->body.begin() + j + 1);
