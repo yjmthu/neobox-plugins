@@ -1,9 +1,10 @@
 #ifndef SPEEDBOX_H
 #define SPEEDBOX_H
 
-#include <neobox/widgetbase.hpp>
-
+#include <any>
 #include <filesystem>
+
+#include <neobox/widgetbase.hpp>
 #include <neobox/pluginobject.h>
 #include <speedboxcfg.h>
 
@@ -17,15 +18,11 @@ private:
   SpeedBoxCfg& m_Settings;
   class NeoSpeedboxPlg* m_PluginObject;
   class SkinObject* m_CentralWidget;
-#ifdef _WIN32
-  HINSTANCE m_SkinDll;
-#else
-  void* m_SkinDll;
-#endif
+  std::any m_SkinDll;
   class NeoTimer* m_Timer;
   class TrayFrame* m_TrayFrame;
   class MenuBase& m_NetCardMenu;
-  void* m_AppBarData;
+  std::any m_AppBarData;
 
   QRect m_ScreenGeometry;
   class NetSpeedHelper& m_NetSpeedHelper;

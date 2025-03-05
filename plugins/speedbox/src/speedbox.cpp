@@ -43,6 +43,18 @@ static SkinApi* const g_SkinApis[] = {
 
 // static SkinApi* const g_SkinApis[7] = {};
 
+#ifdef _WIN32
+#define LIB_PTR HINSTANCE
+#define LoadLib(X) LoadLibraryA((X))
+#define GetProc GetProcAddress
+#define FreeLib FreeLibrary
+#else
+#define LIB_PTR void*
+#define LoadLib(X) dlopen((X), RTLD_LAZY)
+#define GetProc dlsym
+#define FreeLib dlclose
+#endif
+
 const std::vector<std::u8string> NeoSpeedboxPlg::m_DefaultSkins = {
     u8"简简单单",
     u8"经典火绒",
@@ -61,7 +73,6 @@ SpeedBox::SpeedBox(NeoSpeedboxPlg* plugin, SpeedBoxCfg& settings, MenuBase* netc
     , m_ProcessForm(m_Settings.GetProgressMonitor() ? new ProcessForm(this) : nullptr)
     , m_NetCardMenu(*netcardMenu)
     , m_CentralWidget(nullptr)
-    , m_SkinDll(nullptr)
     , m_Timer(NeoTimer::New())
     , m_TrayFrame(nullptr)
     , m_AppBarData(nullptr)
@@ -81,15 +92,16 @@ SpeedBox::~SpeedBox() {
 
   delete m_ProcessForm;
   delete m_CentralWidget;
-#ifdef _WIN32
-  FreeLibrary(m_SkinDll);
-  UnSetHideFullScreen();
-#else
   // linux平台需要判断指针非零
-  if (m_SkinDll) dlclose(m_SkinDll);
+  if (m_SkinDll.has_value()) {
+    auto const libPtr = std::any_cast<LIB_PTR>(m_SkinDll);
+    if (libPtr) FreeLib(libPtr);
+  }
+
+#ifdef _WIN32
+  UnSetHideFullScreen();
 #endif
   
-  // m_Timer->stop();
   delete m_TrayFrame;
 }
 
@@ -130,14 +142,12 @@ void SpeedBox::SetWindowMode() {
 void SpeedBox::UpdateSkin()
 {
   delete m_CentralWidget;
-#ifdef _WIN32
-  FreeLibrary(m_SkinDll);
-#else
-  // Linux下需要判断指针非空
-  if (m_SkinDll) dlclose(m_SkinDll);
-#endif
+  if (m_SkinDll.has_value()) {
+    auto const libPtr = std::any_cast<LIB_PTR>(m_SkinDll);
+    if (libPtr) FreeLib(libPtr);
+    m_SkinDll.reset();
+  }
   m_CentralWidget = nullptr;
-  m_SkinDll = nullptr;
   LoadCurrentSkin();
 }
 
@@ -147,32 +157,17 @@ bool SpeedBox::LoadDll(fs::path dllPath)
 
   SkinObject* (*newSkin)(QWidget*, const TrafficInfo&);
   // bool (*skinVersion)(const std::string&);
-#ifdef _WIN32
-  auto wPath = dllPath.make_preferred().wstring();
-  wPath.push_back(L'\0');
-  m_SkinDll = LoadLibraryW(wPath.data());
-#else
-  auto cPath = dllPath.make_preferred().string();
-  cPath.push_back('\0');
-  m_SkinDll = dlopen(cPath.data(), RTLD_LAZY);
-#endif
-  if (!m_SkinDll) return false;
+  auto libPath = dllPath.make_preferred().string();
+  auto const libPtr = LoadLib(libPath.c_str());
+  if (!libPtr) return false;
 
-  newSkin = reinterpret_cast<decltype(newSkin)>
-#ifdef _WIN32
-  (GetProcAddress(m_SkinDll, "newSkin"));
-#else
-  (dlsym(m_SkinDll, "newSkin"));
-#endif
+  newSkin = reinterpret_cast<decltype(newSkin)>(GetProc(libPtr, "newSkin"));
   if (!newSkin) {
-#ifdef _WIN32
-    FreeLibrary(m_SkinDll);
-#else
-    dlclose(m_SkinDll);
-#endif
-    m_SkinDll = nullptr;
+    FreeLib(libPtr);
     return false;
   }
+
+  m_SkinDll = libPtr;
 
   m_CentralWidget = newSkin(this, m_NetSpeedHelper.m_TrafficInfo);
 
@@ -213,18 +208,18 @@ void SpeedBox::LoadCurrentSkin() {
 
 #ifdef _WIN32
 void SpeedBox::SetHideFullScreen() {
-  m_AppBarData = new APPBARDATA {
+  m_AppBarData = APPBARDATA {
     sizeof(APPBARDATA),
     reinterpret_cast<HWND>(winId()), 
     static_cast<UINT>(MsgCode::MSG_APPBAR_MSGID),
     0, 0, 0
   };
-  SHAppBarMessage(ABM_NEW, reinterpret_cast<APPBARDATA*>(m_AppBarData));
+  SHAppBarMessage(ABM_NEW, &std::any_cast<APPBARDATA&>(m_AppBarData));
 }
 
 void SpeedBox::UnSetHideFullScreen() {
-  SHAppBarMessage(ABM_REMOVE, reinterpret_cast<APPBARDATA*>(m_AppBarData));
-  delete reinterpret_cast<APPBARDATA*>(m_AppBarData);
+  SHAppBarMessage(ABM_REMOVE, &std::any_cast<APPBARDATA&>(m_AppBarData));
+  m_AppBarData.reset();
 }
 #else
 bool SpeedBox::IsCurreenWindowFullScreen() {
