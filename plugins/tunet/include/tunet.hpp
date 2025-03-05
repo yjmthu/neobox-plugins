@@ -26,6 +26,7 @@ private:
   class TuNetCfg* const m_Settings;
   Portal* const m_Portal;
   QAction* m_MainMenuAction;
+  NeoTimer* m_Timer;
 signals:
   void LoginFinished();
   void LogoutFinished();
