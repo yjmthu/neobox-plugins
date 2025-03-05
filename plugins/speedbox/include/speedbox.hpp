@@ -17,8 +17,8 @@ class SpeedBox : public WidgetBase {
 private:
   SpeedBoxCfg& m_Settings;
   class NeoSpeedboxPlg* m_PluginObject;
+  class QLibrary* const m_SkinDll;
   class SkinObject* m_CentralWidget;
-  std::any m_SkinDll;
   class NeoTimer* m_Timer;
   class TrayFrame* m_TrayFrame;
   class MenuBase& m_NetCardMenu;

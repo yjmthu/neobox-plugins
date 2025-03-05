@@ -11,6 +11,7 @@
 #include <QSharedMemory>
 #include <QProcess>
 #include <QDragEnterEvent>
+#include <QLibrary>
 
 #include <neobox/neomenu.hpp>
 #include <speedbox.hpp>
@@ -43,18 +44,6 @@ static SkinApi* const g_SkinApis[] = {
 
 // static SkinApi* const g_SkinApis[7] = {};
 
-#ifdef _WIN32
-#define LIB_PTR HINSTANCE
-#define LoadLib(X) LoadLibraryA((X))
-#define GetProc GetProcAddress
-#define FreeLib FreeLibrary
-#else
-#define LIB_PTR void*
-#define LoadLib(X) dlopen((X), RTLD_LAZY)
-#define GetProc dlsym
-#define FreeLib dlclose
-#endif
-
 const std::vector<std::u8string> NeoSpeedboxPlg::m_DefaultSkins = {
     u8"简简单单",
     u8"经典火绒",
@@ -72,6 +61,7 @@ SpeedBox::SpeedBox(NeoSpeedboxPlg* plugin, SpeedBoxCfg& settings, MenuBase* netc
     , m_NetSpeedHelper(*plugin->m_NetSpeedHelper)
     , m_ProcessForm(m_Settings.GetProgressMonitor() ? new ProcessForm(this) : nullptr)
     , m_NetCardMenu(*netcardMenu)
+    , m_SkinDll(new QLibrary(this))
     , m_CentralWidget(nullptr)
     , m_Timer(NeoTimer::New())
     , m_TrayFrame(nullptr)
@@ -90,13 +80,11 @@ SpeedBox::SpeedBox(NeoSpeedboxPlg* plugin, SpeedBoxCfg& settings, MenuBase* netc
 SpeedBox::~SpeedBox() {
   m_Timer->Destroy();
 
+  delete m_Animation;
   delete m_ProcessForm;
   delete m_CentralWidget;
-  // linux平台需要判断指针非零
-  if (m_SkinDll.has_value()) {
-    auto const libPtr = std::any_cast<LIB_PTR>(m_SkinDll);
-    if (libPtr) FreeLib(libPtr);
-  }
+  m_SkinDll->unload();
+  delete m_SkinDll;
 
 #ifdef _WIN32
   UnSetHideFullScreen();
@@ -142,10 +130,8 @@ void SpeedBox::SetWindowMode() {
 void SpeedBox::UpdateSkin()
 {
   delete m_CentralWidget;
-  if (m_SkinDll.has_value()) {
-    auto const libPtr = std::any_cast<LIB_PTR>(m_SkinDll);
-    if (libPtr) FreeLib(libPtr);
-    m_SkinDll.reset();
+  if (m_SkinDll->isLoaded()) {
+    m_SkinDll->unload();
   }
   m_CentralWidget = nullptr;
   LoadCurrentSkin();
@@ -157,17 +143,16 @@ bool SpeedBox::LoadDll(fs::path dllPath)
 
   SkinObject* (*newSkin)(QWidget*, const TrafficInfo&);
   // bool (*skinVersion)(const std::string&);
-  auto libPath = dllPath.make_preferred().string();
-  auto const libPtr = LoadLib(libPath.c_str());
-  if (!libPtr) return false;
+  auto const libPath = dllPath.make_preferred().u16string();
+  m_SkinDll->setFileName(QString::fromStdU16String(libPath));
 
-  newSkin = reinterpret_cast<decltype(newSkin)>(GetProc(libPtr, "newSkin"));
+  if (!m_SkinDll->load()) return false;
+
+  newSkin = reinterpret_cast<decltype(newSkin)>(m_SkinDll->resolve("newSkin"));
   if (!newSkin) {
-    FreeLib(libPtr);
+    m_SkinDll->unload();
     return false;
   }
-
-  m_SkinDll = libPtr;
 
   m_CentralWidget = newSkin(this, m_NetSpeedHelper.m_TrafficInfo);
 
