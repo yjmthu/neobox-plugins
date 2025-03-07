@@ -70,6 +70,7 @@ void PluginName::InitFunctionMap() {
       u8"模糊背景", u8"Windows10+或KDE下的模糊效果", [this](PluginEvent event, void* data){
         if (event == PluginEvent::Bool) {
           m_Settings.SetColorEffect(*reinterpret_cast<bool *>(data));
+          if (!m_Speedbox) return;
 #ifdef _WIN32
           auto status = *reinterpret_cast<bool *>(data) ? ACCENT_ENABLE_BLURBEHIND : ACCENT_DISABLED;
           auto hWnd = reinterpret_cast<HWND>(m_Speedbox->winId());
@@ -94,7 +95,7 @@ void PluginName::InitFunctionMap() {
           delete m_Speedbox;
           m_Speedbox = new SpeedBox(this, m_Settings, m_NetCardMenu);
           AddMainObject(m_Speedbox);       // 添加到对象列表
-          m_Speedbox->InitShow(m_PluginMethod[u8"enableBlur"].function);
+          if (m_Speedbox) m_Speedbox->InitShow(m_PluginMethod[u8"enableBlur"].function);
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool *>(data) = m_Settings.GetMousePenetrate();
         }
@@ -105,7 +106,7 @@ void PluginName::InitFunctionMap() {
         if (event == PluginEvent::Bool) {
           auto& on = *reinterpret_cast<bool *>(data);
           m_Settings.SetProgressMonitor(on);
-          m_Speedbox->SetProgressMonitor(on);
+          if (m_Speedbox) m_Speedbox->SetProgressMonitor(on);
           mgr->ShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool *>(data) = m_Settings.GetProgressMonitor();
@@ -131,7 +132,7 @@ void PluginName::InitFunctionMap() {
             callback.function(PluginEvent::Bool, data);
             return;
           }
-          m_Speedbox->SetTrayMode(on);
+          if (m_Speedbox) m_Speedbox->SetTrayMode(on);
           mgr->ShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool *>(data) = m_Settings.GetTaskbarMode();
@@ -141,7 +142,10 @@ void PluginName::InitFunctionMap() {
   };
 
   m_ActiveWinodow = [this](PluginEvent event, void*){
+    if (!m_Speedbox) return;
+
     if (event == PluginEvent::MouseDoubleClick) {
+
       if (m_Speedbox->isVisible()) {
         m_Speedbox->hide();
         mgr->ShowMsg("隐藏悬浮窗成功！");

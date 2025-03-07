@@ -27,6 +27,7 @@ PluginName::PluginName(YJson& settings)
   , m_Settings(new TuNetCfg(settings))
   , m_Portal(new Portal())
   , m_MainMenuAction(nullptr)
+  , m_Timer(NeoTimer::New())
 {
   // LoadResources();
   InitFunctionMap();
@@ -35,12 +36,14 @@ PluginName::PluginName(YJson& settings)
     auto delay = m_Settings->GetDelay();
     delay = delay < 0 ? 0 : delay;
     auto cb = [this] { LogInOut(true, true).get(); };
-    NeoTimer::SingleShot(std::chrono::seconds(delay), cb);
+    // NeoTimer::SingleShot(std::chrono::seconds(delay), cb);
+    m_Timer->StartOnce(std::chrono::seconds(delay), cb);
   }
 }
 
 PluginName::~PluginName()
 {
+  m_Timer->Destroy();
   delete m_MainMenuAction;
   delete m_Portal;
   delete m_Settings;
@@ -69,7 +72,9 @@ void PluginName::InitFunctionMap() {
     {u8"autoLogin",
       {u8"自动登录", u8"自动登录清华大学校园网", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
-          m_Settings->SetAutoLogin(*reinterpret_cast<bool*>(data));
+          auto const on = *reinterpret_cast<bool*>(data);
+          if (!on) m_Timer->Expire();
+          m_Settings->SetAutoLogin(on);
           mgr->ShowMsg(u8"设置成功！");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Settings->GetAutoLogin();
@@ -99,6 +104,7 @@ void PluginName::InitFunctionMap() {
         auto const delay = m_Settings->GetDelay();
         auto result = mgr->m_Menu->GetNewInt("输入", "输入延迟时间", 0, 90, delay);
         if (result == std::nullopt) return;
+        m_Timer->Expire();
         m_Settings->SetDelay(*result);
         mgr->ShowMsg("保存成功！");
       }, PluginEvent::Void},
