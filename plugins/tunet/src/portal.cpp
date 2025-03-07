@@ -101,7 +101,7 @@ HttpAction<Portal::Error> Portal::Init(std::u8string username, std::u8string pas
   }
 
   // std::cout << res->body << std::endl;
-  if (search.match_view(res->body, R"((URL|href)="?(https://.+?index_\d+\.html))")) {
+  if (search.match_view(res->body, R"((URL|href)="?(https?://.+?index_\d+\.html))")) {
     std::cout << "Find URL: <" << search.view(0) << ">\n";
     auto url = search.view(2);
     client.SetUrl(url);
