@@ -141,57 +141,43 @@ void BingApi::SetJson(const YJson& json)
   m_DataMutex.lock();
   delete m_Data;
   m_Data = nullptr;
+  if (!GetAutoDownload()) { m_Timer->Expire(); }
   m_DataMutex.unlock();
   return;
 }
 
+bool BingApi::GetAutoDownload() const {
+  return m_Setting[u8"auto-download"].isTrue();
+}
+
 void BingApi::AutoDownload() {
   Locker locker(m_DataMutex);
-  if (m_Setting[u8"auto-download"sv].isFalse())
-    return;
+  if (!GetAutoDownload()) return;
 
-  m_Timer->StartTimer(20s, [this] {
-    LockerEx locker(m_DataMutex);
-    if (m_Setting[u8"auto-download"sv].isTrue()) {
-      locker.unlock();
-      auto const dataObtained = CheckData().get();
-      if (!dataObtained || !*dataObtained) return;
-      locker.lock();
-      const fs::path imgDir = m_Setting[u8"directory"].getValueString();
-      for (auto& item : m_Data->find(u8"images")->second.getArray()) {
-        ImageInfo ptr {
-          .ImagePath = (imgDir / GetImageName(item)).u8string(),
-          .ImageUrl = m_Setting[u8"api"].getValueString() +
-            item[u8"urlbase"].getValueString() + u8"_UHD.jpg",
-          .ErrorCode = ImageInfo::NoErr
-        };
-        // ------------------------------------ //
-        DownloadJob::DownloadImage(ptr).get();
-      }
+  m_Timer->StartOnce(30s, [this] {
+    auto const dataObtained = CheckData().get();
+    if (!dataObtained || !*dataObtained) return;
+
+    Locker locker(m_DataMutex);
+    const fs::path imgDir = m_Setting[u8"directory"].getValueString();
+    for (auto& item : m_Data->find(u8"images")->second.getArray()) {
+      ImageInfo ptr {
+        .ImagePath = (imgDir / GetImageName(item)).u8string(),
+        .ImageUrl = m_Setting[u8"api"].getValueString() +
+          item[u8"urlbase"].getValueString() + u8"_UHD.jpg",
+        .ErrorCode = ImageInfo::NoErr
+      };
+      // ------------------------------------ //
+      DownloadJob::DownloadImage(ptr).get();
     }
-    m_Timer->Expire();
   });
 }
 
 std::u8string BingApi::GetToday() {
-#ifdef _WIN32
   auto utc = chrono::system_clock::now();
   std::string result =
       std::format("{0:%Y-%m-%d}", chrono::current_zone()->to_local(utc));
   return std::u8string(result.begin(), result.end());
-#else
-  time_t timep;
-  time(&timep);
-
-  auto const p = gmtime(&timep);
-  std::u8string result(11, 0);
-      // std::format("{:4d}-{:2d}-{:2d}", p->tm_year + 1900, p->tm_mon + 1, p->tm_mday);
-  sprintf(
-    reinterpret_cast<char*>(result.data()), "%04d-%02d-%02d",
-    p->tm_year + 1900, p->tm_mon + 1, p->tm_mday);
-  result.pop_back();
-  return result;
-#endif
 }
 
 std::u8string BingApi::GetImageName(YJson& imgInfo) {

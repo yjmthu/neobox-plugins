@@ -21,6 +21,7 @@ private:
   void InitData();
   HttpAction<bool> CheckData();
   static std::u8string GetToday();
+  bool GetAutoDownload() const;
   std::u8string GetImageName(YJson& imgInfo);
   class NeoTimer* m_Timer;
 
