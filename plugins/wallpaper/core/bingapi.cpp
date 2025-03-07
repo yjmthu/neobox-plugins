@@ -113,7 +113,7 @@ HttpAction<ImageInfo> BingApi::GetNext() {
   // 下这个接口含义，直接看后面的请求参数1084440_UHD.jpg
 
   auto result = co_await CheckData().awaiter();
-  if (!result) {
+  if (!result || !*result) {
     co_return {
       .ErrorMsg = u8"Bad network connection.",
       .ErrorCode = ImageInfo::NetErr
@@ -154,7 +154,8 @@ void BingApi::AutoDownload() {
     LockerEx locker(m_DataMutex);
     if (m_Setting[u8"auto-download"sv].isTrue()) {
       locker.unlock();
-      if (!CheckData().get()) return;
+      auto const dataObtained = CheckData().get();
+      if (!dataObtained || !*dataObtained) return;
       locker.lock();
       const fs::path imgDir = m_Setting[u8"directory"].getValueString();
       for (auto& item : m_Data->find(u8"images")->second.getArray()) {
