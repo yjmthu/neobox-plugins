@@ -13,6 +13,7 @@
 namespace fs = std::filesystem;
 namespace chrono = std::chrono;
 using namespace std::literals;
+using namespace Wall;
 
 
 BingApi::BingApi(YJson& setting)
@@ -70,7 +71,7 @@ void BingApi::InitData()
   }
 }
 
-HttpAction<bool> BingApi::CheckData()
+Bool BingApi::CheckData()
 {
   // https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8
 
@@ -106,7 +107,7 @@ HttpAction<bool> BingApi::CheckData()
   co_return false;
 }
 
-HttpAction<ImageInfo> BingApi::GetNext() {
+ImageInfoX BingApi::GetNext() {
   static size_t s_uCurImgIndex = 0;
 
   // https://www.bing.com/th?id=OHR.Yellowstone150_ZH-CN055
@@ -126,7 +127,7 @@ HttpAction<ImageInfo> BingApi::GetNext() {
   m_Setting[u8"copyrightlink"] = imgInfo[u8"copyrightlink"];
   SaveSetting();
 
-  ++s_uCurImgIndex &= 0x07;
+  ++s_uCurImgIndex &= 0b0111;
   co_return {
     .ImagePath = (imgDir / GetImageName(imgInfo)).u8string(),
     .ImageUrl = m_Setting[u8"api"].getValueString() + imgInfo[u8"urlbase"].getValueString() + u8"_UHD.jpg",

@@ -1,11 +1,13 @@
 #include <wallpaper.h>
 #include <wallbase.h>
 
+namespace Wall {
+
 class ScriptOutput : public WallBase {
 public:
   explicit ScriptOutput(YJson& setting);
   ~ScriptOutput() override;
-  HttpAction<ImageInfo> GetNext() override;
+  ImageInfoX GetNext() override;
   inline static const auto m_Name = u8"脚本输出"s;
 
 private:
@@ -14,3 +16,5 @@ private:
   YJson& GetCurInfo() const
   { return const_cast<ScriptOutput*>(this)->GetCurInfo(); }
 };
+
+}

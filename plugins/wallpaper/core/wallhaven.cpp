@@ -21,6 +21,8 @@ static std::ostream& operator<<(std::ostream& os, const std::u8string& str) {
 }
 #endif
 
+using namespace Wall;
+
 YJson WallhavenData::InitData() {
   try {
     return YJson(m_DataPath, YJson::UTF8);
@@ -47,7 +49,7 @@ void WallhavenData::SaveData() {
   m_Data.toFile(m_DataPath);
 }
 
-HttpAction<bool> WallhavenData::DownloadUrl(Range range)
+Bool WallhavenData::DownloadUrl(Range range)
 {
   static bool working = false;
 
@@ -74,7 +76,7 @@ void WallhavenData::HandleResult(std::vector<std::u8string>& dataArray, const YJ
   }
 }
 
-HttpAction<bool> WallhavenData::DownloadAll(const Range& range)
+Bool WallhavenData::DownloadAll(const Range& range)
 {
 #ifdef _DEBUG
   std::cout << "download all page: " << range[0] << "-" << range[1] << std::endl;
@@ -203,7 +205,7 @@ YJson& Wallhaven::GetCurInfo()
   return m_Setting[u8"WallhavenApi"][m_Setting[u8"WallhavenCurrent"].getValueString()];
 }
 
-HttpAction<bool> Wallhaven::CheckData()
+Bool Wallhaven::CheckData()
 {
   LockerEx locker(m_DataMutex);
 
@@ -223,7 +225,7 @@ HttpAction<bool> Wallhaven::CheckData()
   co_return res != std::nullopt && *res;
 }
 
-HttpAction<ImageInfo> Wallhaven::GetNext()
+ImageInfoX Wallhaven::GetNext()
 {
   // https://w.wallhaven.cc/full/1k/wallhaven-1kmx19.jpg
 

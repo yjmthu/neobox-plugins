@@ -181,7 +181,7 @@ void PluginName::ShowMsg(Portal::Error err, const char* showSucc) {
   }
 }
 
-HttpAction<void> PluginName::LogInOut(bool login, bool silent) {
+AsyncVoid PluginName::LogInOut(bool login, bool silent) {
   static bool isRunning = false;
   if (isRunning) {
     mgr->ShowMsg("正在运行中，请稍后");

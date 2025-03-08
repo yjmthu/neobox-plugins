@@ -58,7 +58,7 @@ void DownloadJob::ClearPool()
   while (!DownloadJob::IsPoolEmpty());
 }
 
-static HttpAction<bool> StartJob(fs::path path, std::u8string url) {
+static Wall::Bool StartJob(fs::path path, std::u8string url) {
   HttpLib job = HttpLib(HttpUrl(url), true);
   job.SetRedirect(3);
 
@@ -84,7 +84,7 @@ static HttpAction<bool> StartJob(fs::path path, std::u8string url) {
   co_return true;
 }
 
-HttpAction<DownloadJob::Error> DownloadJob::DownloadImage(const ImageInfo& imageInfo)
+AsyncAction<DownloadJob::Error> DownloadJob::DownloadImage(const ImageInfo& imageInfo)
 {
   using Error = DownloadJob::Error;
   if (imageInfo.ErrorCode != ImageInfo::NoErr) {

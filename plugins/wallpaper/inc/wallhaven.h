@@ -2,13 +2,13 @@
 #include <wallbase.h>
 #include <array>
 
+namespace Wall {
+
 class WallhavenData {
 public:
   typedef std::function<void()> Callback;
-  typedef WallBase::Locker Locker;
-  typedef WallBase::LockerEx LockerEx;
 public:
-  explicit WallhavenData(WallBase::Locker::mutex_type& mutex,
+  explicit WallhavenData(Locker::mutex_type& mutex,
     fs::path path)
     : m_DataPath(std::move(path))
     , m_Mutex(mutex)
@@ -22,10 +22,10 @@ private:
   typedef std::array<int, 2> Range;
   const fs::path m_DataPath;
   YJson m_Data;
-  WallBase::Locker::mutex_type& m_Mutex;
+  Locker::mutex_type& m_Mutex;
   YJson InitData();
   void HandleResult(std::vector<std::u8string>& array, const YJson& data);
-  HttpAction<bool> DownloadAll(const Range& range);
+  Bool DownloadAll(const Range& range);
 public:
   std::u8string& m_ApiUrl;
   YJson::ArrayType& m_Used;
@@ -33,7 +33,7 @@ public:
   YJson::ArrayType& m_Blacklist;
   bool IsEmpty() const;
   void ClearAll();
-  HttpAction<bool> DownloadUrl(Range range);
+  Bool DownloadUrl(Range range);
   void SaveData();
 };
 
@@ -41,7 +41,7 @@ class Wallhaven : public WallBase {
  private:
   static bool IsPngFile(std::u8string& str);
  public:
-  HttpAction<ImageInfo> GetNext() override;
+  ImageInfoX GetNext() override;
   void Dislike(std::u8string_view sImgPath) override;
   void UndoDislike(std::u8string_view sImgPath) override;
 public:
@@ -57,8 +57,10 @@ private:
   { return const_cast<Wallhaven*>(this)->GetCurInfo(); };
 
   std::string IsWallhavenFile(std::string name);
-  HttpAction<bool> CheckData();
+  Bool CheckData();
   std::u8string GetApiPathUrl() const;
 private:
   WallhavenData m_Data;
 };
+
+}

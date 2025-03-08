@@ -16,7 +16,7 @@ public:
     ImageInfoError,
   };
   [[nodiscard]]
-  static HttpAction<Error> DownloadImage(const ImageInfo& imageInfo);
+  static AsyncAction<Error> DownloadImage(const ImageInfo& imageInfo);
   static bool IsImageFile(const std::u8string & fileName);
 
   static std::mutex m_Mutex;

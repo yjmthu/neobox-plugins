@@ -1,10 +1,12 @@
 #ifndef FAVORITE_H
 #define FAVORITE_H
 
-#include <wallpaper.h>
+#include <wallbase.h>
 #include <neobox/systemapi.h>
 
 #include <filesystem>
+
+namespace Wall {
 
 class Favorite : public WallBase {
 public:
@@ -13,7 +15,7 @@ public:
 public:
   YJson& InitSetting(YJson& setting);
   // void InitData();
-  HttpAction<ImageInfo> GetNext() override;
+  ImageInfoX GetNext() override;
   fs::path GetImageDir() const;
   inline static const auto m_Name = u8"收藏壁纸"s;
 
@@ -28,5 +30,7 @@ private:
 private:
   std::vector<std::u8string> m_FileList;
 };
+
+}
 
 #endif // FAVORITE_H

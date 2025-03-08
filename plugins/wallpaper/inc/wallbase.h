@@ -20,17 +20,23 @@ struct ImageInfo {
   uint32_t ErrorCode;
 };
 
-class WallBase {
-public:
+namespace Wall {
+  typedef AsyncVoid Void;
+  typedef AsyncBool Bool;
+  typedef AsyncInt Int;
+  typedef AsyncString String;
+  typedef AsyncAction<ImageInfo> ImageInfoX;
+
+  typedef std::mutex Mutex;
   typedef std::lock_guard<std::mutex> Locker;
   typedef std::unique_lock<std::mutex> LockerEx;
+  typedef std::filesystem::path Path;
+
+class WallBase {
 protected:
-  static std::mutex m_DataMutex;
-  static const fs::path m_DataDir;
+  static Mutex m_DataMutex;
+  static const Path m_DataDir;
   static std::function<void()> SaveSetting;
-  typedef HttpAction<void> Void;
-  typedef HttpAction<bool> Bool;
-  typedef HttpAction<int> Int;
 
   // 获取用户图片目录，并返回下面的“桌面壁纸”目录
   static fs::path GetHomePicLocation();
@@ -55,12 +61,12 @@ public:
   virtual ~WallBase() {}
   static std::nullptr_t Initialize(YJson& setting);
   static void Uuinitialize();
-  static const fs::path m_ConfigPath;
+  static const Path m_ConfigPath;
   static std::atomic_bool m_QuitFlag;
   YJson& m_Setting;
 
 public:
-  virtual HttpAction<ImageInfo> GetNext() = 0;
+  virtual ImageInfoX GetNext() = 0;
   virtual void Dislike(std::u8string_view sImgPath);
   virtual void UndoDislike(std::u8string_view sImgPath);
   virtual void SetJson(const YJson& json);
@@ -70,5 +76,8 @@ public:
   static std::array<WallBase*, NONE> m_Instances;
   friend class Wallpaper;
 };
+}
+
+using WallBase = Wall::WallBase;
 
 #endif

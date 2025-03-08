@@ -3,6 +3,7 @@
 #include <wallpaper.h>
 #include <wallbase.h>
 #include <neobox/systemapi.h>
+#include <neobox/process.h>
 
 #include <utility>
 #include <numeric>
@@ -12,6 +13,7 @@
 
 namespace fs = std::filesystem;
 using namespace std::literals;
+using namespace Wall;
 
 ScriptOutput::ScriptOutput(YJson& setting):
   WallBase(InitSetting(setting))
@@ -39,7 +41,7 @@ YJson& ScriptOutput::InitSetting(YJson& setting)
   return setting;
 }
 
-HttpAction<ImageInfo> ScriptOutput::GetNext()
+ImageInfoX ScriptOutput::GetNext()
 {
   ImageInfo ptr {};
   m_DataMutex.lock();
@@ -52,17 +54,30 @@ HttpAction<ImageInfo> ScriptOutput::GetNext()
     co_return ptr;
   }
 #ifdef _WIN32
-  std::vector<std::wstring> result;
-  const auto wcmd = Utf82WideString(u8cmd);
+  // std::vector<std::wstring> result;
+  // const auto wcmd = Utf82WideString(u8cmd);
+  NeoProcess process(u8cmd);
+  auto res = co_await process.Run();
+  if (!res || *res != 0) {
+    ptr.ErrorMsg = u8"Run command with error."s;
+    ptr.ErrorCode = ImageInfo::RunErr;
+    co_return ptr;
+  }
+  
+  auto output = process.GetStdOut();
+  auto pos = output.find_first_of(L'\r');
+  if (pos == output.npos) {
+    pos = output.size();
+  }
+  auto firstLine = std::string_view(output.data(), pos);
 
-  GetCmdOutput(wcmd.c_str(), result);
-
-  if (result.empty()) {
+  if (firstLine.empty()) {
     ptr.ErrorMsg = u8"Invalid command to get wallpaper path."s;
     ptr.ErrorCode = ImageInfo::CfgErr;
     co_return ptr;
   }
-  auto str = Wide2Utf8String(result.front());
+
+  fs::path str = firstLine;
 #elif defined (__linux__)
   std::vector<std::u8string> result;
   GetCmdOutput(reinterpret_cast<const char*>(u8cmd.c_str()), result);
@@ -71,7 +86,7 @@ HttpAction<ImageInfo> ScriptOutput::GetNext()
     ptr.ErrorCode = ImageInfo::RunErr;
     co_return ptr;
   }
-  auto& str = result.front();
+  fs::path str = result.front();
 #endif
   if (str.empty()) {
     ptr.ErrorMsg = u8"Run command with wrong output."s;
@@ -80,16 +95,11 @@ HttpAction<ImageInfo> ScriptOutput::GetNext()
   }
   if (!fs::exists(str)) {
 #ifdef _WIN32
-    auto wErMsg = std::accumulate(result.begin(), result.end(),
-      L"程序运行输出不匹配，请确保输出图片路径！\n"s,
-      [](const std::wstring& a, const std::wstring& b) {
-        return a + L'\n' + b;
-      });
-    ptr.ErrorMsg = Wide2Utf8String(wErMsg);
+    ptr.ErrorMsg = Ansi2Utf8String(output) + u8"\n程序运行输出不匹配，请确保输出图片路径！\n"s;
 #else
     auto wErMsg = std::accumulate(result.begin(), result.end(),
       u8"程序运行输出不匹配，请确保输出图片路径！\n"s,
-      [](const std::u8string& a, const std::u8string& b) {
+      [] (const std::u8string& a, const std::u8string& b) {
         return a + u8'\n' + b;
       });
     ptr.ErrorMsg = std::move(wErMsg);
@@ -97,7 +107,7 @@ HttpAction<ImageInfo> ScriptOutput::GetNext()
     ptr.ErrorCode = ImageInfo::RunErr;
     co_return ptr;
   }
-  ptr.ImagePath = std::move(str);
+  ptr.ImagePath = str.make_preferred().u8string();
   ptr.ErrorCode = ImageInfo::NoErr;
   co_return ptr;
 }

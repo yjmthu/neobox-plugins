@@ -1,5 +1,6 @@
 #pragma once
 
+#include <favorie.h>
 #include <filesystem>
 #include <list>
 #include <queue>
@@ -20,14 +21,14 @@ enum class OperatorType {
 
 class Wallpaper {
 public:
-  using Locker = WallBase::Locker;
-  using LockerEx = WallBase::LockerEx;
-  using Void = HttpAction<void>;
+  using Locker = Wall::Locker;
+  using LockerEx = Wall::LockerEx;
+  using Void = Wall::Void;
 private:
   fs::path Url2Name(const std::u8string& url);
   void AppendBlackList(const fs::path& path);
   void WriteBlackList();
-  HttpAction<void> PushBack(const ImageInfo& ptr);
+  Void PushBack(const ImageInfo& ptr);
   bool MoveRight();
   static YJson* GetConfigData();
 private:
@@ -69,9 +70,9 @@ private:
   std::mutex m_DataMutex;
 
   class NeoTimer* const m_Timer;
-  class WallBase* m_Wallpaper;
-  class Favorite* const m_Favorites;
-  class WallBase* const m_BingWallpaper;
+  WallBase* m_Wallpaper;
+  Wall::Favorite* const m_Favorites;
+  WallBase* const m_BingWallpaper;
   WallpaperHistory m_PrevImgs;
   std::stack<fs::path> m_NextImgs;
   std::list<std::pair<fs::path, fs::path>> m_BlackList;

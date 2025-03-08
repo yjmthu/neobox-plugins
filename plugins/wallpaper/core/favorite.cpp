@@ -14,6 +14,8 @@ static std::ostream& operator<<(std::ostream& os, const std::u8string& str) {
 }
 #endif
 
+namespace Wall {
+
 Favorite::Favorite(YJson& setting):
   WallBase(InitSetting(setting))
 {
@@ -117,7 +119,7 @@ bool Favorite::GetFileList()
   return true;
 }
 
-HttpAction<ImageInfo> Favorite::GetNext()
+ImageInfoX Favorite::GetNext()
 {
   Locker locker(m_DataMutex);
 
@@ -213,4 +215,6 @@ bool Favorite::IsFileFavorite(const fs::path& path) const
     << " VS. " << path.parent_path().u8string() << std::endl;
 #endif
   return fs::exists(curDir / path.filename());
+}
+
 }

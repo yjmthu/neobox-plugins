@@ -12,6 +12,7 @@
 
 namespace fs = std::filesystem;
 using namespace std::literals;
+using namespace Wall;
 
 Native::Native(YJson& setting):
   WallBase(InitSetting(setting))
@@ -133,7 +134,7 @@ bool Native::GetFileList()
   return true;
 }
 
-HttpAction<ImageInfo> Native::GetNext()
+ImageInfoX Native::GetNext()
 {
   Locker locker(m_DataMutex);
 

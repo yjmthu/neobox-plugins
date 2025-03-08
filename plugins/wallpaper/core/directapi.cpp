@@ -8,6 +8,7 @@
 
 using namespace std::literals;
 using namespace std::chrono;
+using namespace Wall;
 
 DirectApi::DirectApi(YJson& setting):
   WallBase(InitSetting(setting))
@@ -54,7 +55,7 @@ YJson& DirectApi::InitSetting(YJson& setting)
   return setting;
 }
 
-HttpAction<ImageInfo> DirectApi::GetNext()
+ImageInfoX DirectApi::GetNext()
 {
   Locker locker(m_DataMutex);
   auto& apiInfo = GetCurInfo();

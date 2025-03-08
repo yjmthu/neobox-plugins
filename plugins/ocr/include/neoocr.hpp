@@ -20,7 +20,7 @@ struct OcrResult {
 
 class NeoOcr {
 public:
-  typedef HttpAction<std::u8string> String;
+  typedef AsyncU8String String;
   enum class Engine { Windows, Tesseract, Paddle, Other };
   NeoOcr(class OcrConfig& settings);
   ~NeoOcr();

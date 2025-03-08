@@ -1,5 +1,7 @@
 #include <wallbase.h>
 
+namespace Wall {
+
 class Native : public WallBase {
 private:
   size_t GetFileCount();
@@ -10,7 +12,7 @@ public:
   virtual ~Native();
 
 public:
-  HttpAction<ImageInfo> GetNext() override;
+  ImageInfoX GetNext() override;
   void SetJson(const YJson& json) override;
   inline static const auto m_Name = u8"本地壁纸"s;
 
@@ -25,3 +27,5 @@ private:
 private:
   std::vector<std::u8string> m_FileList;
 };
+
+}

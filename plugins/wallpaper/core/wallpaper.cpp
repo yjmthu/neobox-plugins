@@ -14,6 +14,7 @@
 namespace fs = std::filesystem;
 using namespace std::literals;
 using Void = Wallpaper::Void;
+using Favorite = Wall::Favorite;
 
 // extern std::unordered_set<fs::path> g_UsingFiles;
 
@@ -292,7 +293,7 @@ Void Wallpaper::SetDropFile(std::queue<std::u8string_view> urls) {
   }
 }
 
-HttpAction<void> Wallpaper::PushBack(const ImageInfo& ptr)
+Void Wallpaper::PushBack(const ImageInfo& ptr)
 {
   auto imagePath = ptr.ImagePath;
   auto err = co_await DownloadJob::DownloadImage(ptr).awaiter();

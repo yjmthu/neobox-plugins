@@ -36,6 +36,8 @@ public:
     HttpLibError,
   };
 
+  typedef AsyncAction<Error> AsyncError;
+
 private:
   struct UserInfo {
     std::u8string acID;
@@ -62,13 +64,13 @@ private:
   HttpLib client;
 
 public:
-  HttpAction<Error> Init(std::u8string username, std::u8string password);
-  HttpAction<Error> Login();
-  HttpAction<Error> Logout();
+  AsyncError Init(std::u8string username, std::u8string password);
+  AsyncError Login();
+  AsyncError Logout();
 
-  HttpAction<Error> GetInfo();
-  HttpAwaiter<> SendAuth(std::u8string_view token);
-  HttpAwaiter<> GetToken(std::u8string_view ip);
+  AsyncError GetInfo();
+  HttpAwaiter SendAuth(std::u8string_view token);
+  HttpAwaiter GetToken(std::u8string_view ip);
   std::optional<YJson> ParseJson(HttpResponse* res);
   std::u8string_view ParseToken(YJson& json);
   // std::u8string_view parseInfo(YJson& json);

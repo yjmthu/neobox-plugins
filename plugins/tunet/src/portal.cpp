@@ -9,6 +9,7 @@
 #include <regex>
 
 using namespace std::literals;
+using AsyncError = Portal::AsyncError;
 
 static std::ostream& operator<<(std::ostream& os, const std::u8string& res) {
   os.write(reinterpret_cast<const char*>(res.data()), res.size());
@@ -85,7 +86,7 @@ std::optional<YJson> Portal::ParseJson(HttpResponse* res) {
   return YJson(data.begin() + i, data.begin() + j + 1);
 }
 
-HttpAction<Portal::Error> Portal::Init(std::u8string username, std::u8string password) {
+AsyncError Portal::Init(std::u8string username, std::u8string password) {
   userInfo.username = std::move(username);
   userInfo.password = std::move(password);
   
@@ -148,7 +149,7 @@ HttpAction<Portal::Error> Portal::Init(std::u8string username, std::u8string pas
   }
 }
 
-HttpAction<Portal::Error> Portal::GetInfo() {
+AsyncError Portal::GetInfo() {
   HttpUrl url(subHost, ApiList::info, {
     { u8"callback", u8"_" },
     { u8"ip", userInfo.ip },
@@ -175,7 +176,7 @@ HttpAction<Portal::Error> Portal::GetInfo() {
   }
 }
 
-HttpAction<Portal::Error> Portal::Login() {
+AsyncError Portal::Login() {
   if (!userInfo.IsInfoValid()) {
     co_return Error::UserInfoError;
   }
@@ -222,7 +223,7 @@ HttpAction<Portal::Error> Portal::Login() {
   co_return Error::NoError;
 }
 
-HttpAction<Portal::Error> Portal::Logout() {
+AsyncError Portal::Logout() {
   auto err = co_await GetInfo().awaiter();
   if (err == std::nullopt) {
     co_return Error::HttpLibError;
@@ -282,7 +283,7 @@ HttpAction<Portal::Error> Portal::Logout() {
   co_return Error::NoError;
 }
 
-HttpAwaiter<> Portal::SendAuth(std::u8string_view token) {
+HttpAwaiter Portal::SendAuth(std::u8string_view token) {
   std::cout << "Token: " << std::string(token.begin(), token.end()) << std::endl;
   std::u8string const n = u8"200", type = u8"1";
   YJson info = YJson::O {
@@ -339,7 +340,7 @@ HttpAwaiter<> Portal::SendAuth(std::u8string_view token) {
   return client.GetAsync();
 }
 
-HttpAwaiter<> Portal::GetToken(std::u8string_view ip) {
+HttpAwaiter Portal::GetToken(std::u8string_view ip) {
   // if (!this->timestamp.empty()) {
   //   callback(this->token);
   //   return;

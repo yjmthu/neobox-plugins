@@ -97,7 +97,7 @@ IAsyncAction SaveSoftwareBitmapToFile(SoftwareBitmap& softwareBitmap)
 }
 #endif
 
-HttpAction<std::u8string> NeoOcr::GetText(QImage image)
+AsyncU8String NeoOcr::GetText(QImage image)
 {
   using enum Engine;
   std::u8string result = u8"";

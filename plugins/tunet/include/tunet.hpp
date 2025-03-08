@@ -18,7 +18,7 @@ private:
   class QAction* InitMenuAction() override;
   QAction* LoadMainMenuAction();
   void ShowMsg(Portal::Error err, const char* showSucc);
-  HttpAction<void> LogInOut(bool login, bool silent);
+  AsyncVoid LogInOut(bool login, bool silent);
   // static void SetDesktopRightMenu(bool on);
   // static bool HasDesktopRightMenu();
   // std::atomic_bool m_Inited = false;
