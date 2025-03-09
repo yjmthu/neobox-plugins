@@ -55,6 +55,8 @@ public:
     if (size() < 2) return;
     erase(cend() - 2);
   }
+
+  static void Upgrade(int version);
 };
 
 #endif // HISTORY

@@ -145,7 +145,7 @@ ImageInfoX Native::GetNext()
   }
 
   if (m_FileList.empty() && !GetFileList()) {
-    ptr.ErrorMsg = u8"Empty folder with no wallpaper in it.";
+    ptr.ErrorMsg = "Empty folder with no wallpaper in it.";
     ptr.ErrorCode = ImageInfo::FileErr;
   } else {
     ptr.ImagePath = std::move(m_FileList.back());

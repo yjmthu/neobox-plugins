@@ -5,6 +5,8 @@
 #include <set>
 #include <random>
 
+#include <neobox/unicode.h>
+
 #ifdef _DEBUG
 #include <iostream>
 
@@ -139,7 +141,7 @@ ImageInfoX Favorite::GetNext()
 #endif
 
   if (m_FileList.empty() && !GetFileList()) {
-    ptr.ErrorMsg = u8"Empty folder with no wallpaper in it.";
+    ptr.ErrorMsg = "Empty folder with no wallpaper in it.";
     ptr.ErrorCode = ImageInfo::FileErr;
   } else {
     ptr.ImagePath = std::move(m_FileList.back());
@@ -169,7 +171,7 @@ void Favorite::Dislike(std::u8string_view sImgPath)
     fs::remove(oldPath);
   } else {
 #ifdef _WIN32
-    const auto fmtStr = Utf82WideString(m_Setting[u8"NameFormat"].getValueString());
+    const auto fmtStr = Utf82Wide(m_Setting[u8"NameFormat"].getValueString());
     const auto oldStem = oldPath.stem().wstring();
     const auto newName = std::vformat(fmtStr, std::make_wformat_args(oldStem)) + oldPath.extension().wstring();
 #else
@@ -188,11 +190,11 @@ void Favorite::UndoDislike(std::u8string_view sImgPath)
   const auto curDir = GetImageDir();
   std::error_code error;
   if (!fs::exists(curDir) && !fs::create_directories(curDir, error)) {
-    mgr->ShowMsgbox(L"出错", std::format(L"创建文件夹失败！\n文件夹名称：{}。\n错误码：{}。",
-      curDir.wstring(), error.value()));
+    mgr->ShowMsgbox("出错", std::format("创建文件夹失败！\n文件夹名称：{}。\n错误码：{}。",
+      curDir.string(), error.value()));
     return;
   }
-  const auto fmtStr = Utf82WideString(m_Setting[u8"NameFormat"].getValueString());
+  const auto fmtStr = Utf82Wide(m_Setting[u8"NameFormat"].getValueString());
   const auto oldStem = oldPath.stem().wstring();
   const auto newName = std::vformat(fmtStr, std::make_wformat_args(oldStem)) + oldPath.extension().wstring();
   const auto newPath = curDir / newName;

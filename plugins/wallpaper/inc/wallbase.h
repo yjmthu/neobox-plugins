@@ -14,9 +14,9 @@ namespace fs =std::filesystem;
 
 struct ImageInfo {
   enum Errors : uint32_t { NoErr, NetErr, FileErr, RunErr, CfgErr, DataErr };
-  std::u8string ImagePath;
+  std::filesystem::path ImagePath;
   std::u8string ImageUrl;
-  std::u8string ErrorMsg;
+  std::string ErrorMsg;
   uint32_t ErrorCode;
 };
 

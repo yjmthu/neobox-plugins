@@ -3,6 +3,7 @@
 #include <translate.h>
 #include <yjson/yjson.h>
 #include <neobox/httplib.h>
+#include <neobox/unicode.h>
 #include <sha256.h>
 #include <md5.h>
 #include <translatecfg.h>
@@ -388,9 +389,8 @@ void Translate::GetResultGoogle(const Utf8Array& text) {
           m_Callback(res->body.data(), res->body.size());
         }
       } else {
-        std::wstring msg = std::format(L"error: {}\ncode:{}", message, res->status);
-        auto u8msg = Wide2Utf8String(msg);
-        m_Callback(u8msg.data(), u8msg.size());
+        std::string msg = std::format("error: {}\ncode:{}", message, res->status);
+        m_Callback(msg.data(), msg.size());
       }
     }
   };
@@ -544,9 +544,8 @@ void Translate::GetResultBingSimple(const Utf8Array& text) {
           m_Callback(res->body.data(), res->body.size());
         }
       } else {
-        std::wstring msg = std::format(L"error: {}\ncode:{}", message, res->status);
-        auto u8msg = Wide2Utf8String(msg);
-        m_Callback(u8msg.data(), u8msg.size());
+        std::string msg = std::format("error: {}\ncode:{}", message, res->status);
+        m_Callback(msg.data(), msg.size());
       }
     }
   };
@@ -575,9 +574,8 @@ void Translate::GetResultIciba(const Utf8Array& text)
           m_Callback(res->body.data(), res->body.size());
         }
       } else {
-        std::wstring msg = std::format(L"error: {}\ncode:{}", message, res->status);
-        auto u8msg = Wide2Utf8String(msg);
-        m_Callback(u8msg.data(), u8msg.size());
+        std::string msg = std::format("error: {}\ncode:{}", message, res->status);
+        m_Callback(msg.data(), msg.size());
       }
     }
   };
@@ -709,9 +707,8 @@ void Translate::GetResultDictionary(const Utf8Array& text)
           m_Callback(res->body.data(), res->body.size());
         } 
       } else {
-        std::wstring msg = std::format(L"error: {}\ncode:{}", message, res->status);
-        auto u8msg = Wide2Utf8String(msg);
-        m_Callback(u8msg.data(), u8msg.size());
+        std::string msg = std::format("error: {}\ncode:{}", message, res->status);
+        m_Callback(msg.data(), msg.size());
       }
     }
   };

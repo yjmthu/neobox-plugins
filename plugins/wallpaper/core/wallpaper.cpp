@@ -1,3 +1,4 @@
+#include <neobox/unicode.h>
 #include <yjson/yjson.h>
 #include <neobox/httplib.h>
 #include <neobox/systemapi.h>
@@ -15,7 +16,6 @@ namespace fs = std::filesystem;
 using namespace std::literals;
 using Void = Wallpaper::Void;
 using Favorite = Wall::Favorite;
-
 // extern std::unordered_set<fs::path> g_UsingFiles;
 
 constexpr char Wallpaper::m_szWallScript[];
@@ -120,9 +120,9 @@ std::filesystem::path Wallpaper::Url2Name(const std::u8string& url)
     auto const extension = url.rfind(u8'.');                       // all url is img file
     auto utc = std::chrono::system_clock::now();
 
-    auto fmt = Utf82WideString(m_Settings.GetDropNameFmt() + url.substr(extension));
+    auto fmt = Utf82Wide(m_Settings.GetDropNameFmt() + url.substr(extension));
     auto const time = std::chrono::current_zone()->to_local(utc);
-    auto const name = Utf82WideString(url.substr(iter, extension - iter));
+    auto const name = Utf82Wide(url.substr(iter, extension - iter));
     auto const fmtedName = std::vformat(fmt, std::make_wformat_args(time, name));
     imagePath.append(fmtedName);
   }
@@ -139,11 +139,13 @@ Void Wallpaper::SetNext() {
   if (bufferEmpty) {
     auto res = co_await m_Wallpaper->GetNext().awaiter();
     if (res == std::nullopt) {
-      mgr->ShowMsgbox(L"出错", L"获取壁纸失败！");
+      mgr->ShowMsgbox("出错", "获取壁纸失败！");
       co_return;
     }
     if (res->ErrorCode != ImageInfo::NoErr) {
-      mgr->ShowMsgbox(L"出错", Utf82WideString(res->ErrorMsg));
+      auto msg = std::format("获取壁纸失败！\n错误码：{}。\n错误信息：{}",
+        res->ErrorCode, res->ErrorMsg);
+      mgr->ShowMsgbox("出错", res->ErrorMsg);
       co_return;
     }
     // if is bing wallpaper, download it.
@@ -156,7 +158,7 @@ Void Wallpaper::SetNext() {
 #endif
         res = co_await m_Wallpaper->GetNext().awaiter();
         if (!res || res->ErrorCode != ImageInfo::NoErr) {
-          mgr->ShowMsgbox(L"出错", L"获取必应壁纸失败！");
+          mgr->ShowMsgbox("出错", "获取必应壁纸失败！");
           co_return;
         }
       }
@@ -180,7 +182,7 @@ void Wallpaper::UnSetNext() {
     locker.unlock();
     WallpaperPlatform::SetWallpaper(*prev);
   } else {
-    mgr->ShowMsgbox(L"提示", L"当前已经是第一张壁纸！");
+    mgr->ShowMsgbox("提示", "当前已经是第一张壁纸！");
   }
 }
 
@@ -222,12 +224,12 @@ void Wallpaper::ClearJunk() {
   
   try {
     fs::remove_all(junk);
-    if (fs::exists("Blacklist.txt"))
-      fs::remove("Blacklist.txt");
+    if (fs::exists(BLACKLIST_FILE))
+      fs::remove(BLACKLIST_FILE);
   } catch (fs::filesystem_error error) {
-    mgr->ShowMsgbox(L"出错",
-      std::format(L"无法清除文件！\n错误码：{}。\n错误信息：{}",
-        error.code().value(), Ansi2WideString(error.what())));
+    auto msg = std::format("无法清除文件！\n错误码：{}。\n错误信息：{}",
+      error.code().value(), error.what());
+    mgr->ShowMsgbox("出错", msg);
   }
   
   m_DataMutex.lock();
@@ -357,7 +359,7 @@ Void Wallpaper::SetDislike() {
 }
 
 void Wallpaper::ReadBlacklist() {
-  std::ifstream file("wallpaperData/Blacklist.txt", std::ios::in);
+  std::ifstream file(BLACKLIST_FILE, std::ios::in);
   if (file.is_open()) {
     std::string key, val;
     while (std::getline(file, key) && std::getline(file, val)) {
@@ -374,7 +376,7 @@ void Wallpaper::AppendBlackList(const fs::path& path) {
   auto& back = m_BlackList.emplace_back(junk / path.filename(), path);
   fs::rename(back.second, back.first);
 
-  std::ofstream file("wallpaperData/Blacklist.txt", std::ios::app);
+  std::ofstream file(BLACKLIST_FILE, std::ios::app);
   if (!file.is_open())
     return;
   file << back.first.string() << std::endl << back.second.string() << std::endl;
@@ -382,7 +384,7 @@ void Wallpaper::AppendBlackList(const fs::path& path) {
 }
 
 void Wallpaper::WriteBlackList() {
-  std::ofstream file("wallpaperData/Blacklist.txt", std::ios::out);
+  std::ofstream file(BLACKLIST_FILE, std::ios::out);
   if (!file.is_open())
     return;
   

@@ -11,7 +11,7 @@
 #endif
 
 #include "netspeedhelper.h"
-#include <neobox/systemapi.h>
+#include <neobox/unicode.h>
 #include <yjson/yjson.h>
 
 #include <algorithm>
@@ -108,7 +108,8 @@ void NetSpeedHelper::UpdateAdaptersAddresses() {
         pAdapter->IfType == MIB_IF_TYPE_OTHER) {
       continue;
     }
-    auto strAdapterName = Ansi2Utf8String(pAdapter->AdapterName);
+    std::u8string strAdapterName(reinterpret_cast<char8_t*>(pAdapter->AdapterName));
+
     bool const enabled =
         m_AdapterBalckList.find(strAdapterName) == m_AdapterBalckList.end();
     m_Adapters.push_back(IpAdapter{std::move(strAdapterName),

@@ -75,7 +75,7 @@ void PluginName::InitFunctionMap() {
           auto const on = *reinterpret_cast<bool*>(data);
           if (!on) m_Timer->Expire();
           m_Settings->SetAutoLogin(on);
-          mgr->ShowMsg(u8"设置成功！");
+          mgr->ShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Settings->GetAutoLogin();
         }

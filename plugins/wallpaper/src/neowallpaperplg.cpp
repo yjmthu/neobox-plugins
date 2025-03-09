@@ -34,8 +34,8 @@
 
 PluginName::PluginName(YJson& settings)
   : QObject()
-  , PluginObject(InitSettings(settings), u8"neowallpaperplg", u8"壁纸引擎"),
-  m_Wallpaper(new Wallpaper(m_Settings))
+  , PluginObject(InitSettings(settings), u8"neowallpaperplg", u8"壁纸引擎")
+  , m_Wallpaper(new Wallpaper(m_Settings))
 {
   InitFunctionMap();
 }
@@ -270,6 +270,11 @@ YJson& PluginName::InitSettings(YJson& settings)
   auto& nameFmt = settings[u8"DropNameFmt"];
   if (!nameFmt.isString())
     nameFmt = u8"drop-image {1} {0:%Y-%m-%d}";
+  auto& version = settings[u8"Version"];
+  if (!version.isNumber()) {
+    version = 1;
+    WallpaperHistory::Upgrade(1);
+  }
   return settings;
   // we may not need to call SaveSettings;
 }

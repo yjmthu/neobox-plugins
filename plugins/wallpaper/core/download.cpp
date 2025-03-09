@@ -1,15 +1,18 @@
-﻿#include <neobox/systemapi.h>
+﻿#include <neobox/unicode.h>
 #include <download.h>
 #include <neobox/pluginmgr.h>
 #include <neobox/httplib.h>
 
+#include <regex>
+
 using namespace std::literals;
 
-fs::path FileNameFilter(std::u8string path) {
+fs::path FileNameFilter(fs::path path) {
   std::u8string_view pattern(u8":*?\"<>|");
   std::u8string result;
-  result.reserve(path.size());
-  for (int count=0; auto c : path) {
+  auto pathStr = path.u8string();
+  result.reserve(pathStr.size());
+  for (int count=0; auto c : pathStr) {
     if (pattern.find(c) == pattern.npos) {
       result.push_back(c);
     } else if (c == u8':') {
@@ -19,8 +22,7 @@ fs::path FileNameFilter(std::u8string path) {
       }
     }
   }
-  path = std::move(result);
-  fs::path ret = path;
+  fs::path ret = result;
   return ret.make_preferred();
 }
 
@@ -88,7 +90,7 @@ AsyncAction<DownloadJob::Error> DownloadJob::DownloadImage(const ImageInfo& imag
 {
   using Error = DownloadJob::Error;
   if (imageInfo.ErrorCode != ImageInfo::NoErr) {
-    mgr->ShowMsgbox(L"出错", Utf82WideString(imageInfo.ErrorMsg));
+    mgr->ShowMsgbox("出错", imageInfo.ErrorMsg);
     co_return Error::ImageInfoError;
   }
 
@@ -99,7 +101,7 @@ AsyncAction<DownloadJob::Error> DownloadJob::DownloadImage(const ImageInfo& imag
 
   std::error_code error;
   if (!fs::exists(dir) && !fs::create_directories(dir, error)) {
-    mgr->ShowMsgbox(L"出错", std::format(L"创建文件夹失败！\n{}", error.value()));
+    mgr->ShowMsgbox("出错", std::format("创建文件夹失败！\n{}", error.value()));
   }
   if (fs::exists(filePath)) {
     if (!fs::file_size(filePath)){
@@ -113,7 +115,7 @@ AsyncAction<DownloadJob::Error> DownloadJob::DownloadImage(const ImageInfo& imag
   }
 
   if (!HttpLib::IsOnline()) {
-    mgr->ShowMsgbox(L"出错", L"网络异常");
+    mgr->ShowMsgbox("出错", "网络异常");
     co_return Error::NetworkError;
   }
 
@@ -124,7 +126,7 @@ AsyncAction<DownloadJob::Error> DownloadJob::DownloadImage(const ImageInfo& imag
   auto const res = co_await StartJob(filePath, imageUri).awaiter();
 
   if (!res || !*res) {
-    mgr->ShowMsgbox(L"出错", L"下载失败");
+    mgr->ShowMsgbox("出错", "下载失败");
     co_return Error::NetworkError;
   }
 
@@ -133,11 +135,7 @@ AsyncAction<DownloadJob::Error> DownloadJob::DownloadImage(const ImageInfo& imag
 
 bool DownloadJob::IsImageFile(const std::u8string& filesName) {
   // BMP, PNG, GIF, JPG
-  auto wideString { Utf82WideString(filesName) };
-  return std::regex_match(wideString, std::wregex(m_ImgNamePattern, std::wregex::icase));
+  auto view = std::string_view(reinterpret_cast<const char*>(filesName.data()), filesName.size());
+  auto regex = std::regex(".*\\.(jpg|bmp|gif|jpeg|png)$", std::regex::icase);
+  return std::regex_match(view.begin(), view.end(), regex);
 }
-
-const DownloadJob::String DownloadJob::m_ImgNamePattern {
-  L".*\\.(jpg|bmp|gif|jpeg|png)$"
-};
-

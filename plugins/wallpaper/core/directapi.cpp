@@ -2,7 +2,7 @@
 #include <neobox/httplib.h>
 #include <wallpaper.h>
 #include <wallbase.h>
-#include <neobox/systemapi.h>
+#include <neobox/unicode.h>
 
 #include <filesystem>
 
@@ -64,7 +64,7 @@ ImageInfoX DirectApi::GetNext()
   co_return {
     (curDir / GetImageName()).u8string(),
     apiInfo[u8"Url"].getValueString() + apiInfo[u8"Paths"][curIndex].getValueString(),
-    u8"OK",
+    "OK",
     ImageInfo::NoErr
   };
 }
@@ -93,7 +93,7 @@ std::wstring DirectApi::GetImageName() {
 
   auto utc = floor<seconds>(system_clock::now());  // Exactly in seconds.
   const auto time = current_zone()->to_local(utc);
-  const auto format = Utf82WideString(apiInfo[u8"ImageNameFormat"].getValueString());
+  const auto format = Utf82Wide(apiInfo[u8"ImageNameFormat"].getValueString());
   const auto result = std::vformat(format, std::make_wformat_args(time));
   return result;
 }

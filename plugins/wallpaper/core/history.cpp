@@ -2,6 +2,7 @@
 #include <fstream>
 #include <neobox/systemapi.h>
 #include <platform.hpp>
+#include <wallpaper.h>
 
 #ifdef _DEBUG
 #include <iostream>
@@ -39,7 +40,7 @@ void WallpaperHistory::UpdateRegString()
 
 void WallpaperHistory::ReadSettings()
 {
-  std::ifstream file("wallpaperData/History.txt", std::ios::in);
+  std::ifstream file(HISTORY_FILE, std::ios::in);
   if (file.is_open()) {
     std::string temp;
     if (std::getline(file, temp)) {
@@ -54,7 +55,7 @@ void WallpaperHistory::ReadSettings()
 
 void WallpaperHistory::WriteSettings() {
   int m_CountLimit = 100;
-  std::ofstream file("wallpaperData/History.txt", std::ios::out);
+  std::ofstream file(HISTORY_FILE, std::ios::out);
   if (!file.is_open())
     return;
 
@@ -64,4 +65,36 @@ void WallpaperHistory::WriteSettings() {
       break;
   }
   file.close();
+}
+
+void WallpaperHistory::Upgrade(int version)
+{
+  if (version == 1) {
+    #ifdef _WIN32
+    auto code = std::error_code();
+    std::filesystem::rename(HISTORY_FILE, std::format(HISTORY_FILE ".{}", version - 1), code);
+    if (code) {
+      std::filesystem::remove(HISTORY_FILE);
+    }
+    #ifdef _DEBUG
+    if (code) {
+      std::cout << "备份历史记录文件失败！" << code.message() << std::endl;
+    } else {
+      std::cout << "备份历史记录文件成功！" << std::endl;
+    }
+    #endif
+
+    std::filesystem::rename(BLACKLIST_FILE, std::format(BLACKLIST_FILE ".{}", version - 1), code);
+    if (code) {
+      std::filesystem::remove(BLACKLIST_FILE);
+    }
+    #ifdef _DEBUG
+    if (code) {
+      std::cout << "升级历史记录文件失败！" << code.message() << std::endl;
+    } else {
+      std::cout << "升级历史记录文件成功！" << std::endl;
+    }
+    #endif
+    #endif
+  }
 }

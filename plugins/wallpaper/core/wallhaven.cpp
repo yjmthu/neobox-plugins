@@ -231,7 +231,7 @@ ImageInfoX Wallhaven::GetNext()
 
   auto res = co_await CheckData().awaiter();
   if (!res || !*res) co_return {
-    .ErrorMsg = u8"列表下载失败。",
+    .ErrorMsg = "列表下载失败。",
     .ErrorCode = ImageInfo::NetErr
   };
 
@@ -258,7 +258,7 @@ ImageInfoX Wallhaven::GetNext()
     m_Data.m_Unused.pop_back();
     m_Data.SaveData();
   } else {
-    ptr.ErrorMsg = u8"列表下载失败。";
+    ptr.ErrorMsg = "列表下载失败。";
     ptr.ErrorCode = ImageInfo::NetErr;
   }
   m_DataMutex.unlock();

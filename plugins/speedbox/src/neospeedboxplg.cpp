@@ -429,7 +429,7 @@ void PluginName::AddSkin(const QString& name, const fs::path& path)
 {
   std::error_code error;
   if (!fs::exists("skins") && !fs::create_directory("skins", error)) {
-    mgr->ShowMsgbox(L"出错", std::format(L"复制皮肤出错，无法创建skin文件夹！\n错误码：{}。", error.value()));
+    mgr->ShowMsgbox("出错", std::format("复制皮肤出错，无法创建skin文件夹！\n错误码：{}。", error.value()));
     return;
   }
 
@@ -449,7 +449,8 @@ void PluginName::AddSkin(const QString& name, const fs::path& path)
 
   action = m_RemoveSkinMenu->addAction(name);
   RemoveSkinConnect(action);
-  mgr->ShowMsg("添加皮肤" + name + "成功！");
+  auto msg = "添加皮肤" + name.toUtf8() + "成功！";
+  mgr->ShowMsg(std::string(msg.data(), msg.size()));
 }
 
 void PluginName::LoadScreenIndexMenu(MenuBase* parent)

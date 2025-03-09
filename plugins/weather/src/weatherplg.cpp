@@ -50,14 +50,14 @@ void PluginName::InitFunctionMap()
       {u8"清除密钥", u8"清除您的密钥。", [this](PluginEvent, void*) {
         m_Config.SetApiKey(u8"", false);
         m_Config.SetIsPaidUser(false, true);
-        mgr->ShowMsg(u8"清除成功！");
+        mgr->ShowMsg("清除成功！");
       }, PluginEvent::Void}
     },
     {u8"setPaidUser",
       {u8"付费模式", u8"如果你的密钥是付费模式，请勾选此项。", [this](PluginEvent event, void* data) {
         if (event == PluginEvent::Bool) {
           m_Config.SetIsPaidUser(*reinterpret_cast<bool*>(data));
-          mgr->ShowMsg(u8"设置成功！");
+          mgr->ShowMsg("设置成功！");
         } else if (event == PluginEvent::BoolGet) {
           *reinterpret_cast<bool*>(data) = m_Config.GetIsPaidUser();
         }

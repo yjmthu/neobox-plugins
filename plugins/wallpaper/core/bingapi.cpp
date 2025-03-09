@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <wallpaper.h>
 #include <wallbase.h>
-#include <neobox/systemapi.h>
+#include <neobox/unicode.h>
 #include <download.h>
 #include <neobox/neotimer.h>
 
@@ -116,7 +116,7 @@ ImageInfoX BingApi::GetNext() {
   auto result = co_await CheckData().awaiter();
   if (!result || !*result) {
     co_return {
-      .ErrorMsg = u8"Bad network connection.",
+      .ErrorMsg = "Bad network connection.",
       .ErrorCode = ImageInfo::NetErr
     };
   }
@@ -183,7 +183,7 @@ std::u8string BingApi::GetToday() {
 
 std::u8string BingApi::GetImageName(YJson& imgInfo) {
   // see https://codereview.stackexchange.com/questions/156695/converting-stdchronotime-point-to-from-stdstring
-  const auto fmt = Utf82WideString(m_Setting[u8"name-format"].getValueString());
+  const auto fmt = Utf82Wide(m_Setting[u8"name-format"].getValueString());
   const std::string date(Utf8AsString(imgInfo[u8"enddate"].getValueString()));
   const std::u8string& copyright =
       imgInfo[u8"copyright"].getValueString();
@@ -194,13 +194,13 @@ std::u8string BingApi::GetImageName(YJson& imgInfo) {
   chrono::system_clock::time_point timePoint  = {};
   timePoint += chrono::seconds(std::mktime(&tm)) + 24h;
 
-  std::wstring titleUnicode = Utf82WideString(title);
+  std::wstring titleUnicode = Utf82Wide(title);
   for (auto& c: titleUnicode) {
     if (L"/\\;:"sv.find(c) != std::wstring::npos) {
       c = '_';
     }
   }
-  auto const & copyrightUnicode = Utf82WideString(copyright);
+  auto const & copyrightUnicode = Utf82Wide(copyright);
   std::wstring result = std::vformat(fmt, std::make_wformat_args(timePoint, titleUnicode, copyrightUnicode));
-  return Wide2Utf8String(result);
+  return Wide2Utf8(result);
 }

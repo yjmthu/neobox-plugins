@@ -102,7 +102,7 @@ void WeatherDlg::LoadStyleSheet()
 {
   QFile file(":/styles/WeatherStyle.qss");
   if (!file.open(QIODevice::ReadOnly)) {
-    mgr->ShowMsgbox(L"NO", L"打开文件失败");
+    mgr->ShowMsgbox("NO", "打开文件失败");
     return;
   }
   QString sheet = file.readAll();

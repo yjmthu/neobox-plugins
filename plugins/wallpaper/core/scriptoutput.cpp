@@ -49,7 +49,7 @@ ImageInfoX ScriptOutput::GetNext()
   m_DataMutex.unlock();
 
   if (u8cmd.empty()) {
-    ptr.ErrorMsg = u8"Invalid command to get wallpaper path."s;
+    ptr.ErrorMsg = "Invalid command to get wallpaper path."s;
     ptr.ErrorCode = ImageInfo::CfgErr;
     co_return ptr;
   }
@@ -57,22 +57,22 @@ ImageInfoX ScriptOutput::GetNext()
   // std::vector<std::wstring> result;
   // const auto wcmd = Utf82WideString(u8cmd);
   NeoProcess process(u8cmd);
-  auto res = co_await process.Run();
+  auto res = co_await process.Run().awaiter();
   if (!res || *res != 0) {
-    ptr.ErrorMsg = u8"Run command with error."s;
+    ptr.ErrorMsg = "Run command with error."s;
     ptr.ErrorCode = ImageInfo::RunErr;
     co_return ptr;
   }
   
   auto output = process.GetStdOut();
-  auto pos = output.find_first_of(L'\r');
+  auto pos = output.find_first_of('\r');
   if (pos == output.npos) {
     pos = output.size();
   }
   auto firstLine = std::string_view(output.data(), pos);
 
   if (firstLine.empty()) {
-    ptr.ErrorMsg = u8"Invalid command to get wallpaper path."s;
+    ptr.ErrorMsg = "Invalid command to get wallpaper path."s;
     ptr.ErrorCode = ImageInfo::CfgErr;
     co_return ptr;
   }
@@ -89,13 +89,14 @@ ImageInfoX ScriptOutput::GetNext()
   fs::path str = result.front();
 #endif
   if (str.empty()) {
-    ptr.ErrorMsg = u8"Run command with wrong output."s;
+    ptr.ErrorMsg = "Run command with wrong output."s;
     ptr.ErrorCode = ImageInfo::RunErr;
     co_return ptr;
   }
   if (!fs::exists(str)) {
 #ifdef _WIN32
-    ptr.ErrorMsg = Ansi2Utf8String(output) + u8"\n程序运行输出不匹配，请确保输出图片路径！\n"s;
+    ptr.ErrorMsg.assign(output.begin(), output.end());
+    ptr.ErrorMsg += "\n程序运行输出不匹配，请确保输出图片路径！\n"s;
 #else
     auto wErMsg = std::accumulate(result.begin(), result.end(),
       u8"程序运行输出不匹配，请确保输出图片路径！\n"s,

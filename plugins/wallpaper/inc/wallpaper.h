@@ -13,6 +13,9 @@
 
 namespace fs = std::filesystem;
 
+#define HISTORY_FILE "wallpaperData/History.txt"
+#define BLACKLIST_FILE "wallpaperData/Blacklist.txt"
+
 #define NO_IGNORE_WARNING "The return value of the coroutine is not used."
 
 enum class OperatorType {

@@ -69,7 +69,7 @@ bool GZipUnCompress(const _IBufferType& inBuffer, _OBufferType& outBuffer)
   } while (error == Z_OK);
   inflateEnd(&gzipStream);
   if (error != Z_STREAM_END) {
-    mgr->ShowMsg("zilb 解压过程失败！\n" + QString::number(error));
+    mgr->ShowMsg(std::format("zilb 解压过程失败！\n错误码：{}。", error));
   }
   return error == Z_STREAM_END;
 }
@@ -159,18 +159,18 @@ void Weather::Fetch(GetTypes type, std::optional<std::u8string_view> data)
               return;
             } else {
               auto msg = u8"密钥暂时失效！错误码：" + iter->second.getValueString();
-              mgr->ShowMsg(QString::fromUtf8(msg.data(), msg.size()));
+              mgr->ShowMsg(std::string(msg.begin(), msg.end()));
             }
           } else {
-            mgr->ShowMsg(u8"无效的响应体！");
+            mgr->ShowMsg("无效的响应体！");
           }
           m_JSON = std::nullopt;
         }
       } else {
 #ifdef _DEBUG
-        mgr->ShowMsgbox(L"请求出错", std::format(L"错误信息：{}\n错误码：{}", msg, res->status));
+        mgr->ShowMsgbox("请求出错", std::format("错误信息：{}\n错误码：{}", msg, res->status));
 #else
-        mgr->ShowMsg(u8"HTTP请求出错");
+        mgr->ShowMsg("HTTP请求出错");
 #endif
       }
       emit Finished(static_cast<int>(type), false);

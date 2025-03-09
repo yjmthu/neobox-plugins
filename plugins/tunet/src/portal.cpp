@@ -61,7 +61,8 @@ namespace ApiList {
 struct UnicodeSearch {
   std::match_results<std::string_view::const_iterator> match;
 
-  bool match_view(std::u8string_view str, std::string re) {
+  template<typename Char=char>
+  bool match_view(std::basic_string_view<Char> str, std::string re) {
     std::string_view strv(reinterpret_cast<const char*>(str.data()), str.size());
     return std::regex_search(strv.begin(), strv.end(), match, std::regex(re));
   }
@@ -102,7 +103,7 @@ AsyncError Portal::Init(std::u8string username, std::u8string password) {
   }
 
   // std::cout << res->body << std::endl;
-  if (search.match_view(res->body, R"((URL|href)="?(https?://.+?index_\d+\.html))")) {
+  if (search.match_view<char>(res->body, R"((URL|href)="?(https?://.+?index_\d+\.html))")) {
     std::cout << "Find URL: <" << search.view(0) << ">\n";
     auto url = search.view(2);
     client.SetUrl(url);
@@ -114,7 +115,7 @@ AsyncError Portal::Init(std::u8string username, std::u8string password) {
   }
 
   // std::cout << res->body << std::endl;
-  if (search.match_view(res->body, R"(url=(.*ac_id=(\d+)[^"]*))")) {
+  if (search.match_view<char>(res->body, R"(url=(.*ac_id=(\d+)[^"]*))")) {
     auto url = u8"https://" + subHost + search.view(1);
     userInfo.acID = search.view(2);
     std::cout << "Find ac_id: " << userInfo.acID << std::endl
@@ -133,7 +134,7 @@ AsyncError Portal::Init(std::u8string username, std::u8string password) {
   }
 
   // std::cout << res->body << std::endl;
-  if (search.match_view(res->body, R"(CONFIG = (\{[^}]+\}))")) {
+  if (search.match_view<char>(res->body, R"(CONFIG = (\{[^}]+\}))")) {
     auto config = search.view(1);
     if (search.match_view(config, R"(ip\s*:\s*"([^"]+)\")")) {
       userInfo.ip = search.view(1);

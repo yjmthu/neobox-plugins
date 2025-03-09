@@ -1,4 +1,4 @@
-#include <neobox/systemapi.h>
+#include <neobox/unicode.h>
 #include <neoocr.hpp>
 #include <yjson/yjson.h>
 #include <neobox/httplib.h>
@@ -131,12 +131,12 @@ std::vector<OcrResult> NeoOcr::GetTextEx(const QImage& image)
 {
   std::vector<OcrResult> result;
   if (m_Languages.empty()) {
-    mgr->ShowMsgbox(L"error", L"You should set some language first!");
+    mgr->ShowMsgbox("error", "You should set some language first!");
 //    m_TessApi->End();
     return result;
   }
   if (m_TessApi->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.c_str()))) {
-    mgr->ShowMsgbox(L"error", L"Could not initialize tesseract.");
+    mgr->ShowMsgbox("error", "Could not initialize tesseract.");
     return result;
   }
 
@@ -241,12 +241,12 @@ NeoOcr::String NeoOcr::OcrWindows(const QImage& image)
 
   std::wstring result;
   // 不知道为啥必须要在另外一个线程里面才能正常运行
-  co_await WinOcrGet(Utf82WideString(m_Settings.GetWinLan()), softwareBitmap, result);
+  co_await WinOcrGet(Utf82Wide(m_Settings.GetWinLan()), softwareBitmap, result);
   auto pos = result.find_last_not_of(L"\r\n");
   if (pos != result.npos) {
     result.erase(++pos);
   }
-  co_return Wide2Utf8String(result);
+  co_return Wide2Utf8(result);
 #else
   co_return u8"当前平台不支持Windows引擎。";
 #endif
@@ -270,12 +270,12 @@ NeoOcr::String NeoOcr::OcrTesseract(const QImage& image)
   auto fun = [this, &image]() {
     std::u8string result;
     if (m_Languages.empty()) {
-      mgr->ShowMsgbox(L"error", L"You should set some language first!");
+      mgr->ShowMsgbox("error", "You should set some language first!");
   //    m_TessApi->End();
       return result;
     }
     if (m_TessApi->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.c_str()))) {
-      mgr->ShowMsgbox(L"error", L"Could not initialize tesseract.");
+      mgr->ShowMsgbox("error", "Could not initialize tesseract.");
       return result;
     }
     auto const pix = QImage2Pix(image);
