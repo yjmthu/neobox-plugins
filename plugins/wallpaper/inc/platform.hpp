@@ -2,15 +2,19 @@
 
 #include <string>
 #include <filesystem>
-#include <neobox/systemapi.h>
-#include <thread>
+#include <neobox/process.h>
 
 #ifdef _DEBUG
 #include <iostream>
 #endif
 
-#ifdef __linux__
+#ifdef _WIN32
+#include <thread>
+#else
 #include <unistd.h>
+#include <list>
+#include <optional>
+#include <format>
 #endif
 
 namespace WallpaperPlatform {
@@ -19,6 +23,29 @@ namespace fs = std::filesystem;
 using namespace std::literals;
 
 enum class Desktop { WIN, KDE, CDE, DDE, GNOME, XFCE, UNKNOWN };
+
+static void GetCmdOutput(std::u8string cmd, std::list<std::string>& result) {
+  NeoProcess process(cmd);
+  auto res = process.Run().get();
+  if (!res || res.value() != 0) {
+    return;
+  }
+
+  auto out = process.GetStdOut();
+
+  std::string line;
+  for (auto c : out) {
+    if (c == '\n') {
+      result.push_back(std::move(line));
+      line.clear();
+    } else {
+      line.push_back(c);
+    }
+  }
+  if (!line.empty()) {
+    result.push_back(std::move(line));
+  }
+}
 
 inline Desktop GetDesktop() {
 #ifdef _WIN32
@@ -52,7 +79,7 @@ inline std::optional<fs::path> GetWallpaper() {
 #ifdef __linux__
   switch (GetDesktop()) {
   case Desktop::KDE: {
-    char argStr[] = "qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '"
+    char8_t argStr[] = u8"qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '"
       "var allDesktops = desktops();"
       "print(allDesktops);"
       "for (i=0; i < allDesktops.length; i++){"
@@ -77,7 +104,7 @@ inline std::optional<fs::path> GetWallpaper() {
     break;
   }
   case Desktop::GNOME:{
-    std::string_view argStr = "gsettings get org.gnome.desktop.background picture-uri"sv;
+    std::u8string_view argStr = u8"gsettings get org.gnome.desktop.background picture-uri"sv;
     std::list<std::string> result;
     GetCmdOutput(argStr.data(), result);
     while (!result.empty() && result.front().size() <= 7) {
@@ -89,7 +116,7 @@ inline std::optional<fs::path> GetWallpaper() {
     return uri.substr(6, uri.size() - 7);
   }
   case Desktop::CDE:{
-    std::string_view argStr = "gsettings get org.cinnamon.desktop.background picture-uri"sv;
+    std::u8string_view argStr = u8"gsettings get org.cinnamon.desktop.background picture-uri"sv;
     std::list<std::string> result;
     GetCmdOutput(argStr.data(), result);
     while (!result.empty() && result.front().size() <= 7) {
@@ -104,7 +131,7 @@ inline std::optional<fs::path> GetWallpaper() {
     break;
   }
   case Desktop::XFCE: {
-    std::string_view argStr = "xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace0/last-image"sv;
+    std::u8string_view argStr = u8"xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace0/last-image"sv;
     std::list<std::string> result;
     GetCmdOutput(argStr.data(), result);
     break;

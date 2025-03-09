@@ -10,6 +10,7 @@
 
 #include <neobox/menubase.hpp>
 #include <QActionGroup>
+#include <QGuiApplication>
 #include <QInputDialog>
 #include <QFileDialog>
 // #include <QFontDatabase>

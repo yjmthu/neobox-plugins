@@ -21,6 +21,7 @@
 #include <QActionGroup>
 #include <QDropEvent>
 #include <QMimeData>
+#include <QEventLoop>
 
 #ifdef _WIN32
 #include <windows.h>

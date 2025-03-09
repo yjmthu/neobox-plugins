@@ -210,14 +210,35 @@ void SpeedBox::UnSetHideFullScreen() {
 bool SpeedBox::IsCurreenWindowFullScreen() {
   // https://blog.csdn.net/qq_41264992/article/details/126976154
 
+  auto GetCmdOutput = [](const char* cmd) {
+    FILE* pipe = popen(cmd, "r");
+    if (!pipe) return std::string { };
+    char buffer[128];
+    std::string data;
+    while (!feof(pipe)) {
+      if (fgets(buffer, 128, pipe) != nullptr) {
+        data += buffer;
+      }
+    }
+    pclose(pipe);
+
+    while (data.ends_with('\n')) {
+      data.pop_back();
+    }
+
+    auto pos = data.find_last_of('\n');
+    if (pos != std::string::npos) {
+      data = data.substr(pos + 1);
+    }
+    return data;
+  };
+
   // 获取窗口的ID
   auto activeWinCmd =
       "xprop -root | grep _NET_ACTIVE_WINDOW | head -1 | awk '{print $5}' | sed 's/,//' | sed 's/^0x/0x0/'";
-  std::list<std::string> result;
-  GetCmdOutput(activeWinCmd, result);
+  auto result = GetCmdOutput(activeWinCmd);
   if (result.empty()) return false;
-  auto activeWinId = result.back();
-  result.clear();
+  auto activeWinId = result;
 
   // 异常ID过滤
   if (activeWinId == "0x00") {
@@ -226,17 +247,16 @@ bool SpeedBox::IsCurreenWindowFullScreen() {
 
   // 获取屏幕尺寸
   auto screenGeoInfoCmd = "xwininfo -root | awk -F'[ +]' '$3 ~ /-geometry/ {print $4}'";
-  GetCmdOutput(screenGeoInfoCmd, result);
+  result = GetCmdOutput(screenGeoInfoCmd);
   if (result.empty()) return false;
-  auto screenSize = result.back();
-  result.clear();
+  auto screenSize = result;
 
   // 根据窗口ID获取窗口信息
   auto searchWindowCmd = "xwininfo -id  " + activeWinId + " | awk -F'[ +]' '$3 ~ /-geometry/ {print $4}'";
 
-  GetCmdOutput(searchWindowCmd.c_str(), result);
+  result = GetCmdOutput(searchWindowCmd.c_str());
   if (result.empty()) return false;
-  auto activeWindowSize = result.back();
+  auto activeWindowSize = result;
   // std::cout << "<" << active_window_info << ":" << screen_info << ">" << std::endl;
 
   // 窗口状态判断

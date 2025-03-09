@@ -1,6 +1,7 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <iphlpapi.h>
+#include <algorithm>
 #endif
 
 #ifdef __linux__
@@ -8,13 +9,13 @@
 #include <linux/if_link.h>
 #include <netdb.h>
 #include <net/if.h>
+#include <numeric>
 #endif
 
 #include "netspeedhelper.h"
 #include <neobox/unicode.h>
 #include <yjson/yjson.h>
 
-#include <algorithm>
 #include <cstdint>
 
 #if 0
