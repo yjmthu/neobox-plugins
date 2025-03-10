@@ -324,6 +324,7 @@ NeoOcr::String NeoOcr::OcrTesseract(const QImage& image)
     std::u8string await_resume() const noexcept { return std::move(result); }
     void await_suspend(std::coroutine_handle<> handle) noexcept {
       std::thread([this, handle](){
+        std::lock_guard<std::mutex> locker(s_ThreadMutex);
         result = fun();
         handle.resume();
       }).detach();
