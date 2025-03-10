@@ -53,19 +53,20 @@ void PluginName::InitFunctionMap() {
   m_PluginMethod = {
     {u8"login",
       {u8"登录网络", u8"登录清华大学校园网", [this](PluginEvent, void*) {
-        // LogInOut(true, false).get();
         QEventLoop loop;
         connect(this, &PluginName::LoginFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
-        auto&& action = LogInOut(true, false).then([this] { emit LoginFinished(); });
+        auto action = LogInOut(true, false);
+        action.then([this] { emit LoginFinished(); });
         loop.exec();
       }, PluginEvent::Void},
     },
     {u8"logout",
       {u8"登出网络", u8"登出清华大学校园网", [this](PluginEvent, void*) {
-        // LogInOut(false, false).get();
         QEventLoop loop;
         connect(this, &PluginName::LogoutFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
-        auto&& action = LogInOut(false, false).then([this] { emit LogoutFinished(); });
+        // avoid using 'auto&& = ' to receive the return value of 'then'
+        auto action = LogInOut(false, false);
+        action.then([this] { emit LogoutFinished(); });
         loop.exec();
       }, PluginEvent::Void},
     },

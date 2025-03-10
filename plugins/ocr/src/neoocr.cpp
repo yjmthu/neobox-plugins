@@ -283,6 +283,18 @@ NeoOcr::String NeoOcr::OcrTesseract(const QImage& image)
     auto const pix = QImage2Pix(image);
     m_TessApi->SetImage(pix.get());
     char* szText = m_TessApi->GetUTF8Text();
+#ifdef _DEBUG
+    std::cout << "Tesseract version: " << m_TessApi->Version() << std::endl
+      << "Languages: " << reinterpret_cast<std::string&>(m_Languages) << std::endl
+      << "Tessdata dir: " << m_TrainedDataDir << std::endl
+      << "Image size: " << image.width() << "x" << image.height() << std::endl
+      << "Image format: " << image.format() << std::endl
+      << "Image depth: " << image.depth() << std::endl
+      << "Pix size: " << pix->w << "x" << pix->h << std::endl
+      << "Pix depth: " << pix->d << std::endl
+      << "Pix wpl: " << pix->wpl << std::endl
+      << "Recognize result: <\n" << std::endl << szText << "\n>\n" << std::endl;
+#endif
     std::u8string_view view = reinterpret_cast<const char8_t*>(szText);
     result.reserve(view.size());
     // 过滤掉多字节字符之间的空格，例如中文之间的空格
@@ -321,7 +333,13 @@ NeoOcr::String NeoOcr::OcrTesseract(const QImage& image)
     std::function<std::u8string(void)> fun;
     std::u8string result;
   };
-  co_return co_await Awaiter(fun);
+  auto res = co_await Awaiter(fun);
+
+  #ifdef _DEBUG
+  std::cout << "Tesseract result: <\n" << reinterpret_cast<std::string&>(res) << "\n>\n" << std::endl;
+  #endif
+
+  co_return res;
 }
 
 #ifdef _WIN32

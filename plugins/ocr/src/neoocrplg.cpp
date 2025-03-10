@@ -79,21 +79,29 @@ void PluginName::InitFunctionMap() {
     {u8"screenfetch",
       {u8"截取屏幕", u8"截取屏幕区域，识别其中文字。", [this](PluginEvent, void*) {
         static bool busy = false;
-        if (busy) return; else busy = true;
+        if (busy) {
+          mgr->ShowMsg("正在识别中，请稍后再试。");
+          return;
+        }
+
+        struct Guard {
+          Guard() { busy = true; }
+          ~Guard() { busy = false; }
+        } guard;
+
         QImage image;
-        ScreenFetch* box = new ScreenFetch(image);
+        auto const box = new ScreenFetch(image);
         QEventLoop loop;
-        QObject::connect(box, &ScreenFetch::destroyed, &loop, &QEventLoop::quit);
+        QObject::connect(box, &ScreenFetch::destroyed, &loop, &QEventLoop::quit, Qt::QueuedConnection);
         box->showFullScreen();
         loop.exec();
-        busy = false;
         if (!box->HaveCatchImage())
           return;
+
         std::u8string result;
         connect(this, &PluginName::RecognizeFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
-        auto res = m_Ocr->GetText(std::move(image));
-        res.then([this, &result](std::optional<std::u8string> str) {
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        auto coro = m_Ocr->GetText(std::move(image));
+        coro.then([this, &result](auto str) {
           if (!str || str->empty()) {
             mgr->ShowMsg("识别失败");
           } else {
@@ -103,15 +111,14 @@ void PluginName::InitFunctionMap() {
         });
         loop.exec();
 
-        if (!result.empty()) {
-          if (m_Settings.GetWriteClipboard()) {
-            QGuiApplication::clipboard()->setText(QString::fromUtf8(result.data(), result.size()));
-            mgr->ShowMsg("复制数据成功");
-          }
+        if (result.empty()) return;
+        if (m_Settings.GetWriteClipboard()) {
+          QGuiApplication::clipboard()->setText(QString::fromUtf8(result.data(), result.size()));
+          mgr->ShowMsg("复制数据成功");
+        }
 
-          if (m_Settings.GetShowWindow()) {
-            SendBroadcast(PluginEvent::U8string, &result);
-          }
+        if (m_Settings.GetShowWindow()) {
+          SendBroadcast(PluginEvent::U8string, &result);
         }
       }, PluginEvent::Void},
     },
