@@ -37,7 +37,7 @@ struct Awaiter {
       handle.resume();
     }).detach();
   }
-  Awaiter(FunType fun) : fun(fun) {}
+  Awaiter(FunType fun) : fun(std::move(fun)) {}
 private:
   FunType fun;
   ReturnType result;
