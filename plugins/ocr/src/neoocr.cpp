@@ -126,6 +126,17 @@ AsyncU8String NeoOcr::GetText(QImage image)
     break;
   }
 
+  // remove all the empty characters in the front and back
+  auto pos = result.find_first_not_of(u8" \t\r\n");
+  if (pos != result.npos) {
+    result.erase(0, pos);
+  }
+
+  pos = result.find_last_not_of(u8" \t\r\n");
+  if (pos != result.npos) {
+    result.erase(++pos);
+  }
+
   co_return result;
 }
 
@@ -170,8 +181,9 @@ std::vector<OcrResult> NeoOcr::GetTextEx(const QImage& image)
 }
 
 #ifdef _WIN32
-IAsyncAction WinOcrGet(std::wstring name, SoftwareBitmap& softwareBitmap, std::wstring& result) {
+AsyncU8String WinOcrGet(std::wstring name, SoftwareBitmap& softwareBitmap) {
   // co_await SaveSoftwareBitmapToFile(softwareBitmap);
+  std::wstring result;
 
   std::function engine = WinOcr::OcrEngine::TryCreateFromUserProfileLanguages;
   if (name != L"user-Profile") {
@@ -199,6 +211,8 @@ IAsyncAction WinOcrGet(std::wstring name, SoftwareBitmap& softwareBitmap, std::w
     }
     result.push_back(L'\n');
   }
+
+  co_return Wide2Utf8(result);
 }
 #endif
 
@@ -240,15 +254,11 @@ NeoOcr::String NeoOcr::OcrWindows(const QImage& image)
 
   }
 
-
-  std::wstring result;
-  // 不知道为啥必须要在另外一个线程里面才能正常运行
-  co_await WinOcrGet(Utf82Wide(m_Settings.GetWinLan()), softwareBitmap, result);
-  auto pos = result.find_last_not_of(L"\r\n");
-  if (pos != result.npos) {
-    result.erase(++pos);
-  }
-  co_return Wide2Utf8(result);
+  auto res = co_await WinOcrGet(Utf82Wide(m_Settings.GetWinLan()), softwareBitmap).awaiter();
+#ifdef _DEBUG
+  std::cout << "WinOcr result: <\n" << reinterpret_cast<std::string&>(res) << "\n>\n" << std::endl;
+#endif
+  co_return res ? *res : u8"";
 #else
   co_return u8"当前平台不支持Windows引擎。";
 #endif
