@@ -1,5 +1,6 @@
 ﻿#include <neobox/pluginmgr.h>
 
+#include <neoocrplg.hpp>
 #include <ocrdialog.h>
 
 #include <QFile>
@@ -12,6 +13,7 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 #include <QPainter>
+#include <QCheckBox>
 #include <QPen>
 
 class OcrImageQFrame: public QWidget
@@ -59,7 +61,7 @@ void OcrImageQFrame::paintEvent(QPaintEvent *event) {
 
   QPainter painter(this);
   QPen pen("red");
-  pen.setWidth(2);
+  pen.setWidth(1);
   painter.setPen(pen);
   painter.translate(x, y);
   painter.scale(scale, scale);
@@ -81,6 +83,7 @@ void OcrImageQFrame::SetImage(QString path)
     return;
   }
   if (m_Image.load(path)) {
+    m_Results.clear();
     update();
   } else {
     mgr->ShowMsg("加载图片文件失败！");
@@ -88,9 +91,9 @@ void OcrImageQFrame::SetImage(QString path)
 }
 
 
-OcrDialog::OcrDialog(NeoOcr& ocr, OcrDialog*& self)
+OcrDialog::OcrDialog(NeoOcr& ocr, NeoOcrPlg& plg)
   : WidgetBase(nullptr)
-  , m_Self(self)
+  , m_Plugin(plg)
   , m_OcrEngine(ocr)
 {
   setAttribute(Qt::WA_DeleteOnClose);
@@ -103,7 +106,7 @@ OcrDialog::OcrDialog(NeoOcr& ocr, OcrDialog*& self)
 
 OcrDialog::~OcrDialog()
 {
-  m_Self = nullptr;
+  m_Plugin.m_OcrDialog = nullptr;
 }
 
 void OcrDialog::InitBaseLayout()
@@ -116,8 +119,11 @@ void OcrDialog::InitBaseLayout()
       "border-radius: 6px;"
     "}"
   );
-  auto const title = new QLabel("图片扫描", backWidget);
-  title->move(10, 10);
+
+  auto const title = AddTitle("图片文字扫描");
+  // title->setParent(backWidget);
+  title->move(20, 20);
+
   m_ImageLabel = new OcrImageQFrame(backWidget);
   m_ImageLabel->setGeometry(10, 30, 430, 435);
   m_ImageLabel->setStyleSheet("background-color: gray;");
@@ -131,6 +137,7 @@ void OcrDialog::InitBaseLayout()
   controls->setStyleSheet(
     "QWidget {"
       "background-color:white;"
+      "color:black;"
     "}"
     "QPushButton {"
       "background-color: #206620;"
@@ -142,32 +149,80 @@ void OcrDialog::InitBaseLayout()
       "background-color: #101010;"
     "}"
   );
+
+  auto const chkHideWhenFullScreen = new QCheckBox("截屏时隐藏", panel);
+  auto const chkClearText = new QCheckBox("清空之前文本", panel);
+  auto const chkAutoRecognize = new QCheckBox("自动识别", panel);
+  chkAutoRecognize->setToolTip("勾选后，截取屏幕后将自动识别文字。");
+  chkAutoRecognize->setChecked(true);
+
   auto const plainText = new QPlainTextEdit(panel);
   AddScrollBar(plainText->verticalScrollBar());
 
   controls->setContentsMargins(9, 9, 9, 9);
   auto gridLayout = new QGridLayout(controls);
 
+  auto const btnScreenFech = new QPushButton("截取屏幕", controls);
   auto const btnOpenImg = new QPushButton("打开图片", controls);
-  gridLayout->addWidget(btnOpenImg, 0, 0);
+  auto const btnScan = new QPushButton("识别文字", controls);
+
+  gridLayout->addWidget(btnScreenFech, 0, 0);
+  connect(btnScreenFech, &QPushButton::clicked, this, [=, this](){
+    if (m_Plugin.m_IsBusy) {
+      mgr->ShowMsg("正在识别中，请稍后再试。");
+      return;
+    }
+    if (chkHideWhenFullScreen->isChecked()) this->hide();
+    NeoOcrPlg::Guard guard(m_Plugin.m_IsBusy);
+    if (auto image = m_Plugin.GrubImage(); !image.isNull()) {
+      m_ImageLabel->m_Image = std::move(image);
+      m_ImageLabel->m_Results.clear();
+      m_ImageLabel->update();
+    }
+    if (!this->isVisible()) this->show();
+
+    if (chkAutoRecognize->isChecked()) {
+      m_Plugin.m_IsBusy = false;
+      btnScan->click();
+    }
+  });
+
+  gridLayout->addWidget(btnOpenImg, 0, 1);
   connect(btnOpenImg, &QPushButton::clicked, this, [this](){
     auto path = OpenImage();
     m_ImageLabel->SetImage(path);
   });
-  auto const btnScan = new QPushButton("识别文字", controls);
-  gridLayout->addWidget(btnScan, 0, 1);
-  connect(btnScan, &QPushButton::clicked, this, [this, plainText](){
+
+  gridLayout->addWidget(btnScan, 0, 2);
+  connect(btnScan, &QPushButton::clicked, this, [=, this](){
+    if (m_Plugin.m_IsBusy) {
+      mgr->ShowMsg("正在识别中，请稍后再试。");
+      return;
+    }
+    NeoOcrPlg::Guard guard(m_Plugin.m_IsBusy);
+
     if (m_ImageLabel->m_Image.isNull()) {
       mgr->ShowMsg("请先打开图片！");
       return;
     }
-    auto result = m_OcrEngine.GetTextEx(m_ImageLabel->m_Image);
-    for (const auto &i: result) {
+    if (chkClearText->isChecked()) plainText->clear();
+
+    auto result = m_Plugin.GetTextEx(m_ImageLabel->m_Image);
+    if (!result || result->empty()) {
+      mgr->ShowMsg("识别失败");
+      return;
+    }
+
+    for (const auto &i: *result) {
       plainText->appendPlainText(QString::fromUtf8(i.text.data(), i.text.size()));
     }
-    m_ImageLabel->m_Results = std::move(result);
+    m_ImageLabel->m_Results = std::move(*result);
     m_ImageLabel->update();
   });
+
+  gridLayout->addWidget(chkHideWhenFullScreen, 1, 0);
+  gridLayout->addWidget(chkClearText, 1, 1);
+  gridLayout->addWidget(chkAutoRecognize, 1, 2);
 
   plainText->setGeometry(10, 125, 300, 300);
   plainText->setStyleSheet(

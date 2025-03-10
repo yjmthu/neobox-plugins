@@ -2,7 +2,7 @@
 #include <neoocr.hpp>
 #include <neobox/pluginmgr.h>
 #include <neobox/neomenu.hpp>
-#include <screenfetch.h>
+#include <screenfetch.hpp>
 #include <yjson/yjson.h>
 #include <neobox/menubase.hpp>
 #include <ocrdialog.h>
@@ -71,54 +71,36 @@ void PluginName::InitFunctionMap() {
           // m_OcrDialog->show();
           m_OcrDialog->activateWindow();
         } else {
-          m_OcrDialog = new OcrDialog(*m_Ocr, m_OcrDialog);
+          m_OcrDialog = new OcrDialog(*m_Ocr, *this);
           m_OcrDialog->show();
         }
       }, PluginEvent::Void }
     },
     {u8"screenfetch",
       {u8"截取屏幕", u8"截取屏幕区域，识别其中文字。", [this](PluginEvent, void*) {
-        static bool busy = false;
-        if (busy) {
+        if (m_IsBusy) {
           mgr->ShowMsg("正在识别中，请稍后再试。");
           return;
         }
 
-        struct Guard {
-          Guard() { busy = true; }
-          ~Guard() { busy = false; }
-        } guard;
+        Guard guard(m_IsBusy);
 
-        QImage image;
-        auto const box = new ScreenFetch(image);
-        QEventLoop loop;
-        QObject::connect(box, &ScreenFetch::destroyed, &loop, &QEventLoop::quit, Qt::QueuedConnection);
-        box->showFullScreen();
-        loop.exec();
-        if (!box->HaveCatchImage())
+        QImage image = GrubImage();
+        if (image.isNull()) return;
+
+        auto result = GetText(image);
+        if (!result || result->empty()) {
+          mgr->ShowMsg("识别失败");
           return;
+        }
 
-        std::u8string result;
-        connect(this, &PluginName::RecognizeFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
-        auto coro = m_Ocr->GetText(std::move(image));
-        coro.then([this, &result](auto str) {
-          if (!str || str->empty()) {
-            mgr->ShowMsg("识别失败");
-          } else {
-            result = std::move(*str);
-          }
-          emit RecognizeFinished();
-        });
-        loop.exec();
-
-        if (result.empty()) return;
         if (m_Settings.GetWriteClipboard()) {
-          QGuiApplication::clipboard()->setText(QString::fromUtf8(result.data(), result.size()));
+          QGuiApplication::clipboard()->setText(QString::fromUtf8(result->data(), result->size()));
           mgr->ShowMsg("复制数据成功");
         }
 
         if (m_Settings.GetShowWindow()) {
-          SendBroadcast(PluginEvent::U8string, &result);
+          SendBroadcast(PluginEvent::U8string, &*result);
         }
       }, PluginEvent::Void},
     },
@@ -358,4 +340,41 @@ void NeoOcrPlg::AddTesseractSection(QWidget* parent, QVBoxLayout* layout) {
     parent->close();
   });
   layout->addWidget(btnOk);
+}
+
+std::optional<std::u8string> NeoOcrPlg::GetText(const QImage& image) {
+  QEventLoop loop;
+  connect(this, &NeoOcrPlg::RecognizeFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
+  auto coro = m_Ocr->GetText(image);
+  coro.then([this](auto& str) {
+    emit RecognizeFinished();
+  });
+  loop.exec();
+  return coro.get();
+}
+
+QImage NeoOcrPlg::GrubImage() {
+  QImage image;
+
+  ScreenFetch box(image);
+  box.showFullScreen();
+
+  QEventLoop loop;
+  QObject::connect(&box, &ScreenFetch::CatchImage, &loop, &QEventLoop::quit);
+  loop.exec();
+
+  box.close();
+  return image;
+}
+
+
+std::optional<std::vector<OcrResult>> NeoOcrPlg::GetTextEx(const QImage& image) {
+  QEventLoop loop;
+  connect(this, &NeoOcrPlg::RecognizeFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
+  auto coro = m_Ocr->GetTextEx(image);
+  coro.then([this](auto& str) {
+    emit RecognizeFinished();
+  });
+  loop.exec();
+  return coro.get();
 }

@@ -1,4 +1,4 @@
-#include <screenfetch.h>
+#include <screenfetch.hpp>
 
 #include <QGuiApplication>
 #include <QPaintEvent>
@@ -10,10 +10,9 @@ ScreenFetch::ScreenFetch(QImage& image, QWidget* parent)
     : QWidget(parent),
       m_Image(image),
       m_bFirstClicked(0),
-      m_bHaveCatchImage(false),
       m_PixMap(QGuiApplication::primaryScreen()->grabWindow()) {
   setWindowFlag(Qt::WindowStaysOnTopHint, true);
-  setAttribute(Qt::WA_DeleteOnClose, true);
+  // setAttribute(Qt::WA_DeleteOnClose, true);
   SetCursor();
 }
 
@@ -21,7 +20,7 @@ ScreenFetch::~ScreenFetch() {}
 
 void ScreenFetch::SetCursor() {
 	QPixmap pixmap(QStringLiteral(":/icons/cursor.png"));
-  pixmap.scaled(20, 20);
+  pixmap.scaled(20, 18);
   QCursor cursor(pixmap, 5, 0);
   setCursor(cursor);
 }
@@ -53,8 +52,7 @@ void ScreenFetch::mouseReleaseEvent(QMouseEvent* event) {
         auto const w = std::abs(m_RectSize.x()), h = std::abs(m_RectSize.y());
         m_Image = temp.copy(x * kx, y * ky, w * kx, h * ky);
       }
-      m_bHaveCatchImage = true;
-      close();
+      emit CatchImage();
     }
     event->accept();
   } else {
@@ -87,7 +85,7 @@ void ScreenFetch::keyPressEvent(QKeyEvent* event) {
   switch (event->key()) {
     case Qt::Key_Escape:
       event->accept();
-      close();
+      emit CatchImage();
       break;
     default:
       event->ignore();

@@ -21,11 +21,12 @@ struct OcrResult {
 class NeoOcr {
 public:
   typedef AsyncU8String String;
+  typedef AsyncAction<std::vector<OcrResult>> OcrResultAction;
   enum class Engine { Windows, Tesseract, Paddle, Other };
   NeoOcr(class OcrConfig& settings);
   ~NeoOcr();
   [[nodiscard]] String GetText(QImage image);
-  std::vector<OcrResult> GetTextEx(const QImage& image);
+  [[nodiscard]] OcrResultAction GetTextEx(const QImage& image);
   void InitLanguagesList();
   void AddLanguages(const std::vector<std::u8string>& urls);
   void RmoveLanguages(const std::vector<std::u8string>& names);

@@ -6,14 +6,15 @@
 
 class OcrDialog: public WidgetBase {
 public:
-  explicit OcrDialog(NeoOcr& ocr, OcrDialog*& self);
+  explicit OcrDialog(NeoOcr& ocr, class NeoOcrPlg& plg);
   virtual ~OcrDialog();
 private:
   void InitBaseLayout();
   QString OpenImage();
 private:
   NeoOcr& m_OcrEngine;
-  OcrDialog* & m_Self;
+  NeoOcrPlg& m_Plugin;
+  // OcrDialog* & m_Self;
   class OcrImageQFrame* m_ImageLabel;
 };
 
