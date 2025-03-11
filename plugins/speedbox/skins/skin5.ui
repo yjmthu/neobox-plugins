@@ -21,12 +21,13 @@
   </property>
   <property name="styleSheet">
    <string notr="true">QWidget#center5 {
-	background-color: transparent;
-    border-image: url(&quot;:/icons/archlinux-light.png&quot;);
+background-color: rgba(255, 255, 255, 0);
 }
-QWidget:hover#center5 {
-	background-color: transparent;
-    border-image: url(&quot;:/icons/archlinux-dark.png&quot;);
+QWidget#center5 {
+border-image: url(:/icons/archlinux_light.png);
+}
+QWidget#center5:hover {
+border-image: url(:/icons/archlinux_dark.png);
 }</string>
   </property>
   <widget class="QLabel" name="memUse">

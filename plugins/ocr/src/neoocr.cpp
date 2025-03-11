@@ -162,7 +162,7 @@ NeoOcr::OcrResultAction NeoOcr::GetTextEx(const QImage& image)
 
   #ifdef _DEBUG
   for (const auto& i: res) {
-    std::cout << "Text: " << reinterpret_cast<std::string&>(i.text) << std::endl;
+    std::cout << "Text: " << reinterpret_cast<const std::string&>(i.text) << std::endl;
   }
   #endif
 

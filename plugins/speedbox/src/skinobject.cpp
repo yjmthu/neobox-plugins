@@ -19,4 +19,5 @@ void SkinObject::InitSize(QWidget* parent)
   parent->setFixedSize(size);
   UpdateText();
   m_Center->show();
+  m_Center->raise();
 }

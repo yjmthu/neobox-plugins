@@ -120,7 +120,15 @@ void SpeedBox::SetWindowMode() {
   setAttribute(Qt::WA_TransparentForMouseEvents, m_Settings.GetMousePenetrate());
   setAttribute(Qt::WA_TranslucentBackground, true);
   setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
-  setStyleSheet("QToolTip{border:1px solid rgb(118, 118, 118);background-color:white;color:black;}");
+  setStyleSheet(
+    "QWidget {"
+      "background-color: transparent;"
+    "}"
+    "QToolTip {"
+      "border: 1px solid rgb(118, 118, 118);"
+      "background-color: white;"
+      "color: black;"
+    "}");
   setAcceptDrops(true);
 
   auto p = m_Settings.GetPosition();
