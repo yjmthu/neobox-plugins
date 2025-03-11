@@ -25,23 +25,23 @@ namespace fs = std::filesystem;
 static std::mutex s_ThreadMutex;
 
 
-template<typename ReturnType>
-struct Awaiter {
-  typedef std::function<ReturnType()> FunType;
-  bool await_ready() const noexcept { return false; }
-  auto await_resume() const noexcept { return std::move(result); }
-  void await_suspend(std::coroutine_handle<> handle) noexcept {
-    std::thread([this, handle](){
-      std::lock_guard<std::mutex> locker(s_ThreadMutex);
-      result = fun();
-      handle.resume();
-    }).detach();
-  }
-  Awaiter(FunType fun) : fun(std::move(fun)) {}
-private:
-  FunType fun;
-  ReturnType result;
-};
+// template<typename ReturnType>
+// struct Awaiter {
+//   typedef std::function<ReturnType()> FunType;
+//   bool await_ready() const noexcept { return false; }
+//   auto await_resume() const noexcept { return std::move(result); }
+//   void await_suspend(std::coroutine_handle<> handle) noexcept {
+//     std::thread([this, handle](){
+//       std::lock_guard<std::mutex> locker(s_ThreadMutex);
+//       result = fun();
+//       handle.resume();
+//     }).detach();
+//   }
+//   Awaiter(FunType fun) : fun(std::move(fun)) {}
+// private:
+//   FunType fun;
+//   ReturnType result;
+// };
 
 #ifdef _WIN32
 #include <Unknwn.h>
@@ -129,16 +129,12 @@ AsyncU8String NeoOcr::GetText(QImage image)
       image = image.convertToFormat(QImage::Format_RGB32);
     }
     auto res = co_await OcrWindows(image).awaiter();
-    if (res && res->size() > 0) {
-      result = std::move(*res);
-    }
+    if (res) result = std::move(*res);
     break;
   }
   case Tesseract: {
-    auto res = co_await OcrTesseract(image).awaiter();
-    if (res && res->size() > 0) {
-      result = std::move(*res);
-    }
+    // auto res = co_await OcrTesseract(image).awaiter();
+    result = co_await AsyncThread<std::u8string>(std::bind(&NeoOcr::OcrTesseract, this, std::ref(image)));
     break;
   }
   default:
@@ -161,51 +157,7 @@ AsyncU8String NeoOcr::GetText(QImage image)
 
 NeoOcr::OcrResultAction NeoOcr::GetTextEx(const QImage& image)
 {
-  auto fun = [this, &image] () {
-    std::vector<OcrResult> result;
-    if (m_Languages.empty()) {
-      mgr->ShowMsgbox("error", "You should set some language first!");
-  //    m_TessApi->End();
-      return result;
-    }
-    if (m_TessApi->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.c_str()))) {
-      mgr->ShowMsgbox("error", "Could not initialize tesseract.");
-      return result;
-    }
-
-    auto const pix = QImage2Pix(image);
-    m_TessApi->SetImage(pix.get());
-
-    // RIL_TEXTLINE 表示识别文本行
-    const auto boxes = m_TessApi->GetComponentImages(tesseract::RIL_TEXTLINE, true, NULL, NULL);
-
-    for (int i = 0; i != boxes->n; ++i) {
-      auto box = boxaGetBox(boxes, i, L_CLONE);
-      m_TessApi->SetRectangle(box->x - 1, box->y - 1, box->w + 2, box->h + 2);
-      char* ocrResult = m_TessApi->GetUTF8Text();
-      std::string_view sv(ocrResult);
-      auto pos = sv.find_last_not_of(" \t\r\n");
-      if (pos != sv.npos) {
-        sv.remove_suffix(sv.size() - pos - 1);
-      }
-      int conf = m_TessApi->MeanTextConf();
-      result.push_back(OcrResult {
-        .text { sv.begin(), sv.end() },
-        .x = box->x,
-        .y = box->y,
-        .w = box->w,
-        .h = box->h,
-        .confidence = conf,
-      });
-      boxDestroy(&box);
-      delete[] ocrResult;
-    }
-
-    m_TessApi->End();
-    return result;
-  };
-
-  auto res = co_await Awaiter<std::vector<OcrResult>>(fun);
+  auto res = co_await AsyncThread<std::vector<OcrResult>>(std::bind(&NeoOcr::OcrTesseractEx, this, std::ref(image)));
 
   #ifdef _DEBUG
   for (const auto& i: res) {
@@ -214,6 +166,50 @@ NeoOcr::OcrResultAction NeoOcr::GetTextEx(const QImage& image)
   #endif
 
   co_return res;
+}
+
+std::vector<OcrResult> NeoOcr::OcrTesseractEx(const QImage& image)
+{
+  std::vector<OcrResult> result;
+  if (m_Languages.empty()) {
+    mgr->ShowMsgbox("error", "You should set some language first!");
+    return result;
+  }
+  if (m_TessApi->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.c_str()))) {
+    mgr->ShowMsgbox("error", "Could not initialize tesseract.");
+    return result;
+  }
+
+  auto const pix = QImage2Pix(image);
+  m_TessApi->SetImage(pix.get());
+
+  // RIL_TEXTLINE 表示识别文本行
+  const auto boxes = m_TessApi->GetComponentImages(tesseract::RIL_TEXTLINE, true, NULL, NULL);
+
+  for (int i = 0; i != boxes->n; ++i) {
+    auto box = boxaGetBox(boxes, i, L_CLONE);
+    m_TessApi->SetRectangle(box->x - 1, box->y - 1, box->w + 2, box->h + 2);
+    char* ocrResult = m_TessApi->GetUTF8Text();
+    std::string_view sv(ocrResult);
+    auto pos = sv.find_last_not_of(" \t\r\n");
+    if (pos != sv.npos) {
+      sv.remove_suffix(sv.size() - pos - 1);
+    }
+    int conf = m_TessApi->MeanTextConf();
+    result.push_back(OcrResult {
+      .text { sv.begin(), sv.end() },
+      .x = box->x,
+      .y = box->y,
+      .w = box->w,
+      .h = box->h,
+      .confidence = conf,
+    });
+    boxDestroy(&box);
+    delete[] ocrResult;
+  }
+
+  m_TessApi->End();
+  return result;
 }
 
 #ifdef _WIN32
@@ -303,7 +299,7 @@ NeoOcr::String NeoOcr::OcrWindows(const QImage& image)
 #endif
 }
 
-NeoOcr::String NeoOcr::OcrTesseract(const QImage& image)
+std::u8string NeoOcr::OcrTesseract(const QImage& image)
 {
   static const int charSizeTable[16] {
     // 单字节字符 0b0000~0b1000   0b0xxx
@@ -318,63 +314,57 @@ NeoOcr::String NeoOcr::OcrTesseract(const QImage& image)
     4,
   };
 
-  auto fun = [this, &image]() -> std::u8string {
-    std::u8string result;
-    if (m_Languages.empty()) {
-      mgr->ShowMsgbox("error", "You should set some language first!");
-  //    m_TessApi->End();
-      return result;
-    }
-    if (m_TessApi->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.c_str()))) {
-      mgr->ShowMsgbox("error", "Could not initialize tesseract.");
-      return result;
-    }
-    auto const pix = QImage2Pix(image);
-    m_TessApi->SetImage(pix.get());
-    char* szText = m_TessApi->GetUTF8Text();
+  std::lock_guard<std::mutex> locker(s_ThreadMutex);
+  std::u8string result;
+  if (m_Languages.empty()) {
+    mgr->ShowMsgbox("error", "You should set some language first!");
+//    m_TessApi->End();
+    return result;
+  }
+  if (m_TessApi->Init(m_TrainedDataDir.c_str(), reinterpret_cast<const char*>(m_Languages.c_str()))) {
+    mgr->ShowMsgbox("error", "Could not initialize tesseract.");
+    return result;
+  }
+  auto const pix = QImage2Pix(image);
+  m_TessApi->SetImage(pix.get());
+  char* szText = m_TessApi->GetUTF8Text();
 #ifdef _DEBUG
-    std::cout << "Tesseract version: " << m_TessApi->Version() << std::endl
-      << "Languages: " << reinterpret_cast<std::string&>(m_Languages) << std::endl
-      << "Tessdata dir: " << m_TrainedDataDir << std::endl
-      << "Image size: " << image.width() << "x" << image.height() << std::endl
-      << "Image format: " << image.format() << std::endl
-      << "Image depth: " << image.depth() << std::endl
-      << "Pix size: " << pix->w << "x" << pix->h << std::endl
-      << "Pix depth: " << pix->d << std::endl
-      << "Pix wpl: " << pix->wpl << std::endl
-      << "Recognize result: <\n" << std::endl << szText << "\n>\n" << std::endl;
+  std::cout << "Tesseract version: " << m_TessApi->Version() << std::endl
+    << "Languages: " << reinterpret_cast<std::string&>(m_Languages) << std::endl
+    << "Tessdata dir: " << m_TrainedDataDir << std::endl
+    << "Image size: " << image.width() << "x" << image.height() << std::endl
+    << "Image format: " << image.format() << std::endl
+    << "Image depth: " << image.depth() << std::endl
+    << "Pix size: " << pix->w << "x" << pix->h << std::endl
+    << "Pix depth: " << pix->d << std::endl
+    << "Pix wpl: " << pix->wpl << std::endl
+    << "Recognize result: <\n" << std::endl << szText << "\n>\n" << std::endl;
 #endif
-    std::u8string_view view = reinterpret_cast<const char8_t*>(szText);
-    result.reserve(view.size());
-    // 过滤掉多字节字符之间的空格，例如中文之间的空格
-    for (auto ptr = view.cbegin(); ptr != view.cend(); ) {
-      auto size = charSizeTable[*ptr >> 4];
-      result.append(ptr, ptr + size);
-      ptr += size;
-      if (size > 1 && ptr != view.cend() && *ptr == ' ') {
-        if (++ptr == view.cend())
-          break;
-        if (charSizeTable[*ptr >> 4] == 1) {
-          result.push_back(' ');
-        }
+  std::u8string_view view = reinterpret_cast<const char8_t*>(szText);
+  result.reserve(view.size());
+  // 过滤掉多字节字符之间的空格，例如中文之间的空格
+  for (auto ptr = view.cbegin(); ptr != view.cend(); ) {
+    auto size = charSizeTable[*ptr >> 4];
+    result.append(ptr, ptr + size);
+    ptr += size;
+    if (size > 1 && ptr != view.cend() && *ptr == ' ') {
+      if (++ptr == view.cend())
+        break;
+      if (charSizeTable[*ptr >> 4] == 1) {
+        result.push_back(' ');
       }
     }
-    m_TessApi->End();
-    delete [] szText;
-    auto pos = result.find_last_not_of(u8"\r\n");
-    if (pos != result.npos) {
-      result.erase(++pos);
-    }
-    return result;
-  };
-
-  auto res = co_await Awaiter<std::u8string>(fun);
-
+  }
+  m_TessApi->End();
+  delete [] szText;
+  auto pos = result.find_last_not_of(u8"\r\n");
+  if (pos != result.npos) {
+    result.erase(++pos);
+  }
   #ifdef _DEBUG
-  std::cout << "Tesseract result: <\n" << reinterpret_cast<std::string&>(res) << "\n>\n" << std::endl;
+  std::cout << "Tesseract result: <\n" << reinterpret_cast<std::string&>(result) << "\n>\n" << std::endl;
   #endif
-
-  co_return res;
+  return result;
 }
 
 #ifdef _WIN32

@@ -37,7 +37,8 @@ public:
 #endif
 private:
   [[nodiscard]] String OcrWindows(const QImage& image);
-  [[nodiscard]] String OcrTesseract(const QImage& image);
+  std::u8string OcrTesseract(const QImage& image);
+  std::vector<OcrResult> OcrTesseractEx(const QImage& image);
 private:
   OcrConfig& m_Settings;
   std::u8string GetLanguageName(const std::u8string& url);
