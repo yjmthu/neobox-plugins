@@ -92,8 +92,8 @@ NeoOcr::NeoOcr(OcrConfig& settings)
 
 NeoOcr::~NeoOcr()
 {
-  delete m_TessApi;
   std::lock_guard<std::mutex> locker(s_ThreadMutex);
+  delete m_TessApi;
 }
 
 #ifdef _WIN32
