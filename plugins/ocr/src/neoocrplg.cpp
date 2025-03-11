@@ -166,8 +166,8 @@ void PluginName::InitFunctionMap() {
         ));
       }
       if (!dataRaw.empty()) {
-        m_Ocr->SetDropData(dataRef);
-        mgr->ShowMsg("复制数据文件成功。");
+        DropData(dataRef);
+        mgr->ShowMsg("复制数据文件成功！");
       }
     }
   }});
@@ -377,4 +377,13 @@ std::optional<std::vector<OcrResult>> NeoOcrPlg::GetTextEx(const QImage& image) 
   });
   loop.exec();
   return coro.get();
+}
+
+
+void NeoOcrPlg::DropData(std::queue<std::u8string_view>& data) {
+  QEventLoop loop;
+  connect(this, &NeoOcrPlg::DropDataFinished, &loop, &QEventLoop::quit, Qt::QueuedConnection);
+  auto coro = m_Ocr->SetDropData(data);
+  coro.then([this] { emit DropDataFinished(); });
+  loop.exec();
 }

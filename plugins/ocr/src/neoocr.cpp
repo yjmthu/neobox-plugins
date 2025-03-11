@@ -8,7 +8,6 @@
 #include <ranges>
 #include <set>
 #include <mutex>
-#include <thread>
 
 #include <QByteArray>
 #include <QImage>
@@ -23,6 +22,7 @@
 std::unique_ptr<Pix, void(*)(Pix*)> QImage2Pix(const QImage& qImage);
 namespace fs = std::filesystem;
 static std::mutex s_ThreadMutex;
+static std::condition_variable s_ThreadCond;
 
 
 // template<typename ReturnType>
@@ -92,7 +92,8 @@ NeoOcr::NeoOcr(OcrConfig& settings)
 
 NeoOcr::~NeoOcr()
 {
-  std::lock_guard<std::mutex> locker(s_ThreadMutex);
+  std::unique_lock<std::mutex> locker(s_ThreadMutex);
+  s_ThreadCond.wait(locker, [this] { return !m_Http; });
   delete m_TessApi;
 }
 
@@ -409,7 +410,7 @@ void NeoOcr::DownloadFile(std::u8string_view url, const fs::path& path)
   clt.Get(path);
 }
 
-void NeoOcr::SetDropData(std::queue<std::u8string_view>& data)
+AsyncVoid NeoOcr::SetDropData(std::queue<std::u8string_view>& data)
 {
   auto const folder = fs::path(m_Settings.GetTessdataDir());
 
@@ -424,18 +425,39 @@ void NeoOcr::SetDropData(std::queue<std::u8string_view>& data)
       fs::copy(str, folder / path.filename());
     }
   }
-  if (!urls.empty()) {
-    std::thread([urls, folder](){
-      std::lock_guard<std::mutex> locker(s_ThreadMutex);
-      for (auto& url: urls) {
-        auto pos = url.rfind(u8'/');
-        if (pos == url.npos) {
-          continue;
-        }
-        HttpLib(HttpUrl(url)).Get(folder / url.substr(pos + 1));
-      }
-    }).detach();
+  if (urls.empty()) co_return;
+
+  for (auto& url: urls) {
+    auto pos = url.rfind(u8'/');
+    if (pos == url.npos) {
+      continue;
+    }
+    auto filePath = folder / url.substr(pos + 1);
+    std::ofstream ofs(filePath, std::ios::binary);
+
+    s_ThreadMutex.lock();
+    m_Http = std::make_unique<HttpLib>(HttpUrl(url), true);
+    s_ThreadMutex.unlock();
+
+    auto cb = HttpLib::Callback {
+      .onWrite = [this, &ofs](auto data, auto size) {
+        ofs.write((const char*)data, size);
+        return size;
+      },
+    };
+    auto res = co_await m_Http->GetAsync(cb);
+    ofs.close();
+
+    if (!res || res->status != 200) {
+      fs::remove(filePath);
+    }
   }
+
+  std::unique_lock<std::mutex> locker(s_ThreadMutex);
+  m_Http.reset();
+  locker.unlock();
+
+  s_ThreadCond.notify_one();
 }
 
 std::u8string NeoOcr::GetLanguageName(const std::u8string& url)

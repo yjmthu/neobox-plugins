@@ -31,7 +31,7 @@ public:
   void AddLanguages(const std::vector<std::u8string>& urls);
   void RmoveLanguages(const std::vector<std::u8string>& names);
   void SetDataDir(const std::u8string& dirname);
-  void SetDropData(std::queue<std::u8string_view>& data);
+  [[nodiscard]] AsyncVoid SetDropData(std::queue<std::u8string_view>& data);
 #ifdef _WIN32
   static std::vector<std::pair<std::wstring, std::wstring>> GetLanguages();
 #endif
@@ -47,6 +47,7 @@ private:
   tesseract::TessBaseAPI* const m_TessApi;
   std::u8string m_Languages;
   std::string m_TrainedDataDir;
+  std::unique_ptr<HttpLib> m_Http;
 };
 
 #endif

@@ -38,6 +38,7 @@ private:
   std::optional<std::u8string> GetText(const QImage& image);
   std::optional<std::vector<OcrResult>> GetTextEx(const QImage& image);
   static QImage GrubImage();
+  void DropData(std::queue<std::u8string_view>& data);
 private:
   friend class OcrDialog;
   OcrConfig m_Settings;
@@ -47,6 +48,7 @@ private:
   bool m_IsBusy = false;
 signals:
   void RecognizeFinished();
+  void DropDataFinished();
 };
 
 #endif // NEOOCRPLG_H
