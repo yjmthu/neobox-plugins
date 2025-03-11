@@ -61,12 +61,16 @@ protected:
   void SetProgressMonitor(bool on);
   void SetTrayMode(bool on);
   void UpdateScreenIndex(int index);
+  void MoveToScreenCenter();
+
+  void LoadScreen(int index);
+  QPoint ReadPosition();
+  void SavePosition(QPoint pos);
 
  private:
   void SetWindowMode();
   bool LoadDll(fs::path dllPath);
   void LoadCurrentSkin();
-  void LoadScreen(int index);
 #ifdef _WIN32
   void SetHideFullScreen();
   void UnSetHideFullScreen();

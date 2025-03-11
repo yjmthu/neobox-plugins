@@ -283,6 +283,11 @@ YJson& PluginName::InitSettings(YJson& settings)
     version = 3;
     settings[u8"ScreenIndex"] = 0;
   }
+
+  if (version.getValueInt() < 4) {
+    version = 4;
+    settings[u8"PositionSide"] = u8"LT"; // LeftTop
+  }
   return settings;
   // we may not need to call SaveSettings;
 }
@@ -472,7 +477,10 @@ void PluginName::LoadScreenIndexMenu(MenuBase* parent)
     if (primaryIndex != -1 && currentScreen >= allScreens.size()) {
       currentScreen = primaryIndex;
       m_Speedbox->UpdateScreenIndex(currentScreen);
+    } else {
+      m_Speedbox->LoadScreen(currentScreen);
     }
+    m_Speedbox->move(m_Speedbox->ReadPosition());
 
     for (int i = 0; i != allScreens.size(); ++i) {
       auto const geometry = allScreens[i]->geometry();

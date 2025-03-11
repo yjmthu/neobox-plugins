@@ -72,7 +72,6 @@ SpeedBox::SpeedBox(NeoSpeedboxPlg* plugin, SpeedBoxCfg& settings, MenuBase* netc
 #ifdef _WIN32
   SetHideFullScreen();
 #endif
-  LoadScreen(m_Settings.GetScreenIndex());
   LoadCurrentSkin();
   InitNetCard();
 }
@@ -99,8 +98,8 @@ void SpeedBox::InitShow(const PluginObject::FollowerFunction& callback) {
   if (m_Animation) {
     m_Animation->setDuration(100);
     m_Animation->setTargetObject(this);
-    connect(m_Animation, &QPropertyAnimation::finished, this, [this]() {
-      m_Settings.SetPosition(YJson::A{x(), y()});
+    connect(m_Animation, &QPropertyAnimation::finished, this, [this] {
+      SavePosition(pos());
     });
   }
 
@@ -131,8 +130,59 @@ void SpeedBox::SetWindowMode() {
     "}");
   setAcceptDrops(true);
 
-  auto p = m_Settings.GetPosition();
-  move(p.front().getValueInt(), p.back().getValueInt());
+  LoadScreen(m_Settings.GetScreenIndex());
+  move(ReadPosition());
+}
+
+QPoint SpeedBox::ReadPosition() {
+  auto posSide = m_Settings.GetPositionSide();
+  auto pos = m_Settings.GetPosition();
+  QPoint point(pos.front().getValueInt(), pos.back().getValueInt());
+
+  if (posSide.size() != 2) posSide = u8"LT";
+
+  if (posSide[0] == 'L') {
+    point.rx() += m_ScreenGeometry.left();
+  } else {
+    point.rx() += m_ScreenGeometry.right();
+  }
+  if (posSide[1] == 'T') {
+    point.ry() += m_ScreenGeometry.top();
+  } else {
+    point.ry() += m_ScreenGeometry.bottom();
+  }
+
+  // check if the position is in the screen
+  if (!m_ScreenGeometry.contains(point)) {
+    point = m_ScreenGeometry.center() - QPoint(width() / 2, height() / 2);
+  }
+
+  return point;
+}
+
+void SpeedBox::SavePosition(QPoint pos) {
+  std::u8string positionSide(2, 0);
+  auto const x1 = pos.x() - m_ScreenGeometry.left();
+  auto const x2 = pos.x() - m_ScreenGeometry.right();
+  if (std::abs(x1) < std::abs(x2)) {
+    pos.rx() = x1;
+    positionSide[0] = 'L';
+  } else {
+    pos.rx() = x2;
+    positionSide[0] = 'R';
+  }
+
+  auto const y1 = pos.y() - m_ScreenGeometry.top();
+  auto const y2 = pos.y() - m_ScreenGeometry.bottom();
+  if (std::abs(y1) < std::abs(y2)) {
+    pos.ry() = y1;
+    positionSide[1] = 'T';
+  } else {
+    pos.ry() = y2;
+    positionSide[1] = 'B';
+  }
+  m_Settings.SetPositionSide(positionSide, false);
+  m_Settings.SetPosition(YJson::A { pos.x(), pos.y() });
 }
 
 void SpeedBox::UpdateSkin()
@@ -333,14 +383,15 @@ void SpeedBox::mousePressEvent(QMouseEvent* event) {
 
 void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
-    m_Settings.SetPosition(YJson::A{x(), y()});
     auto screen = QApplication::screenAt(QCursor::pos());
     auto index = QApplication::screens().indexOf(screen);
     if (m_Settings.GetScreenIndex() != index) {
       m_ScreenGeometry = screen->geometry();
-      m_Settings.SetScreenIndex(index);
+      m_Settings.SetScreenIndex(index, false);
       emit ScreenChanged(index);
     }
+    // m_Settings.SetPosition(YJson::A{x(), y()});
+    SavePosition(pos());
   }
   this->WidgetBase::mouseReleaseEvent(event);
 }
@@ -425,18 +476,23 @@ void SpeedBox::leaveEvent(QEvent* event) {
   m_Animation->setStartValue(rtForm);
   auto const hideBits = m_Settings.GetHideAside();
   if ((HideSide::Right & hideBits) && rtForm.right() + delta >= rtScreen.right()) {
+    if (QGuiApplication::screenAt(rtForm.topRight())) goto ignore;
     m_HideSide = HideSide::Right;
     rtForm.moveTo(rtScreen.right() - delta, rtForm.y());
   } else if ((HideSide::Left & hideBits)  && rtForm.left() - delta <= rtScreen.left()) {
+    if (QGuiApplication::screenAt(rtForm.topLeft())) goto ignore;
     m_HideSide = HideSide::Left;
     rtForm.moveTo(rtScreen.left() + delta - rtForm.width(), rtForm.y());
   } else if ((HideSide::Top & hideBits) && rtForm.top() - delta <= rtScreen.top()) {
+    if (QGuiApplication::screenAt(rtForm.topLeft())) goto ignore;
     m_HideSide = HideSide::Top;
     rtForm.moveTo(rtForm.x(), rtScreen.top() + delta - rtForm.height());
   } else if ((HideSide::Bottom & hideBits) && rtForm.bottom() + delta >= rtScreen.bottom()) {
+    if (QGuiApplication::screenAt(rtForm.bottomLeft())) goto ignore;
     m_HideSide = HideSide::Bottom;
     rtForm.moveTo(rtForm.x(), rtScreen.bottom() - delta);
   } else {
+ignore:
     m_HideSide = HideSide::None;
     event->ignore();
     return;
@@ -446,15 +502,19 @@ void SpeedBox::leaveEvent(QEvent* event) {
   event->accept();
 }
 
+void SpeedBox::MoveToScreenCenter()
+{
+  auto pos = m_ScreenGeometry.center() - QPoint(width() / 2, height() / 2);
+  move(pos);
+  SavePosition(pos);
+}
+
 void SpeedBox::InitMove()
 {
   LoadScreen(m_Settings.GetScreenIndex());
 
-  auto pos = m_ScreenGeometry.topLeft() + QPoint(100, 100);
-  move(pos);
-
+  MoveToScreenCenter();
   m_HideSide = HideSide::None;
-  m_Settings.SetPosition(YJson::A { pos.x(), pos.y() } );
   if (!isVisible())
     show();
   mgr->ShowMsg("移动成功！");
@@ -477,11 +537,9 @@ void SpeedBox::UpdateScreenIndex(int index)
 {
   LoadScreen(index);
 
-  auto pos = m_ScreenGeometry.center() - QPoint(width() / 2, height() / 2);
-  move(pos);
-  m_Settings.SetPosition(YJson::A { pos.x(), pos.y() }, false);
+  m_Settings.SetScreenIndex(index, false);
+  MoveToScreenCenter();
 
-  m_Settings.SetScreenIndex(index);
   mgr->ShowMsg("切换屏幕成功！");
 }
 

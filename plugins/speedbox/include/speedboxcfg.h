@@ -7,6 +7,7 @@ class SpeedBoxCfg: public NeoConfig {
   ConfigConsruct(SpeedBoxCfg)
   CfgBool(ShowForm)
   CfgArray(Position)
+  CfgString(PositionSide)
   CfgInt(HideAside)
   CfgInt(ScreenIndex)
   CfgBool(ColorEffect)
