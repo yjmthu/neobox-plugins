@@ -30,11 +30,13 @@ private:
   std::string m_MemFrameStyle;
 
   class QPropertyAnimation* m_Animation;
-  enum HideSide: int32_t {
-    Left = 8, Right = 2,
-    Top = 1, Bottom = 4,
+  enum ScreenSide: uint32_t {
+    Left = 0b1000, Right = 0b0010,
+    Top = 0b0001, Bottom = 0b0100,
     None = 0
-  } m_HideSide = HideSide::None;
+  } m_HideSide = ScreenSide::None;
+
+  uint32_t m_ScreenAround = ScreenSide::None;
 
 protected:
   void wheelEvent(QWheelEvent *event) override;

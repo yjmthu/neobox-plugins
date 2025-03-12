@@ -385,10 +385,13 @@ void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     auto screen = QApplication::screenAt(QCursor::pos());
     auto index = QApplication::screens().indexOf(screen);
-    if (m_Settings.GetScreenIndex() != index) {
-      m_ScreenGeometry = screen->geometry();
-      m_Settings.SetScreenIndex(index, false);
-      emit ScreenChanged(index);
+    if (index != -1) {
+      if (m_Settings.GetScreenIndex() != index) {
+        // m_ScreenGeometry = screen->geometry();
+        LoadScreen(index);
+        m_Settings.SetScreenIndex(index, false);
+        emit ScreenChanged(index);
+      }
     }
     // m_Settings.SetPosition(YJson::A{x(), y()});
     SavePosition(pos());
@@ -447,16 +450,16 @@ void SpeedBox::enterEvent(QEnterEvent* event) {
   auto rtForm = this->frameGeometry();
   m_Animation->setStartValue(rtForm);
   switch (m_HideSide) {
-    case HideSide::Left:
+    case ScreenSide::Left:
       rtForm.moveTo(rtScreen.left() - delta, rtForm.y());
       break;
-    case HideSide::Right:
+    case ScreenSide::Right:
       rtForm.moveTo(rtScreen.right() - rtForm.width() + delta, rtForm.y());
       break;
-    case HideSide::Top:
+    case ScreenSide::Top:
       rtForm.moveTo(rtForm.x(), rtScreen.top() - delta);
       break;
-    case HideSide::Bottom:
+    case ScreenSide::Bottom:
       rtForm.moveTo(rtForm.x(), rtScreen.bottom() - rtForm.height() + delta);
       break;
     default:
@@ -474,26 +477,21 @@ void SpeedBox::leaveEvent(QEvent* event) {
   auto const& rtScreen = m_ScreenGeometry;
   auto rtForm = this->frameGeometry();
   m_Animation->setStartValue(rtForm);
-  auto const hideBits = m_Settings.GetHideAside();
-  if ((HideSide::Right & hideBits) && rtForm.right() + delta >= rtScreen.right()) {
-    if (QGuiApplication::screenAt(rtForm.topRight())) goto ignore;
-    m_HideSide = HideSide::Right;
+  uint8_t const hideBits = (uint8_t)m_Settings.GetHideAside() & ~(uint8_t)m_ScreenAround;
+  if ((ScreenSide::Right & hideBits) && rtForm.right() + delta >= rtScreen.right()) {
+    m_HideSide = ScreenSide::Right;
     rtForm.moveTo(rtScreen.right() - delta, rtForm.y());
-  } else if ((HideSide::Left & hideBits)  && rtForm.left() - delta <= rtScreen.left()) {
-    if (QGuiApplication::screenAt(rtForm.topLeft())) goto ignore;
-    m_HideSide = HideSide::Left;
+  } else if ((ScreenSide::Left & hideBits)  && rtForm.left() - delta <= rtScreen.left()) {
+    m_HideSide = ScreenSide::Left;
     rtForm.moveTo(rtScreen.left() + delta - rtForm.width(), rtForm.y());
-  } else if ((HideSide::Top & hideBits) && rtForm.top() - delta <= rtScreen.top()) {
-    if (QGuiApplication::screenAt(rtForm.topLeft())) goto ignore;
-    m_HideSide = HideSide::Top;
+  } else if ((ScreenSide::Top & hideBits) && rtForm.top() - delta <= rtScreen.top()) {
+    m_HideSide = ScreenSide::Top;
     rtForm.moveTo(rtForm.x(), rtScreen.top() + delta - rtForm.height());
-  } else if ((HideSide::Bottom & hideBits) && rtForm.bottom() + delta >= rtScreen.bottom()) {
-    if (QGuiApplication::screenAt(rtForm.bottomLeft())) goto ignore;
-    m_HideSide = HideSide::Bottom;
+  } else if ((ScreenSide::Bottom & hideBits) && rtForm.bottom() + delta >= rtScreen.bottom()) {
+    m_HideSide = ScreenSide::Bottom;
     rtForm.moveTo(rtForm.x(), rtScreen.bottom() - delta);
   } else {
-ignore:
-    m_HideSide = HideSide::None;
+    m_HideSide = ScreenSide::None;
     event->ignore();
     return;
   }
@@ -514,7 +512,7 @@ void SpeedBox::InitMove()
   LoadScreen(m_Settings.GetScreenIndex());
 
   MoveToScreenCenter();
-  m_HideSide = HideSide::None;
+  m_HideSide = ScreenSide::None;
   if (!isVisible())
     show();
   mgr->ShowMsg("移动成功！");
@@ -527,9 +525,26 @@ void SpeedBox::LoadScreen(int index) {
     return;
   }
   if (index >= screens.size()) {
-    m_ScreenGeometry = QGuiApplication::primaryScreen()->geometry();
-  } else {
-    m_ScreenGeometry = screens[index]->geometry();
+    index = 0;
+  }
+  m_ScreenGeometry = screens[index]->geometry();
+
+  m_ScreenAround = ScreenSide::None;
+  for (auto s: screens) {
+    auto geo = s->geometry();
+    if (geo.top() == m_ScreenGeometry.top()) {
+      if (geo.left() < m_ScreenGeometry.left()) {
+        m_ScreenAround |= ScreenSide::Left;
+      } else if (geo.left() > m_ScreenGeometry.left()) {
+        m_ScreenAround |= ScreenSide::Right;
+      }
+    } else if (geo.left() == m_ScreenGeometry.left()) {
+      if (geo.top() < m_ScreenGeometry.top()) {
+        m_ScreenAround |= ScreenSide::Top;
+      } else if (geo.top() > m_ScreenGeometry.top()) {
+        m_ScreenAround |= ScreenSide::Bottom;
+      }
+    }
   }
 }
 
