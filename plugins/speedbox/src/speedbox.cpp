@@ -383,17 +383,17 @@ void SpeedBox::mousePressEvent(QMouseEvent* event) {
 
 void SpeedBox::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
-    auto screen = QApplication::screenAt(QCursor::pos());
-    auto index = QApplication::screens().indexOf(screen);
-    if (index != -1) {
-      if (m_Settings.GetScreenIndex() != index) {
-        // m_ScreenGeometry = screen->geometry();
+    if (!m_ScreenGeometry.contains(QCursor::pos())) {
+      auto const screen = QApplication::screenAt(QCursor::pos());
+      auto index = QApplication::screens().indexOf(screen);
+      if (index != -1) {
         LoadScreen(index);
         m_Settings.SetScreenIndex(index, false);
         emit ScreenChanged(index);
+      } else {
+        mgr->ShowMsg("Qt屏幕索引错误！");
       }
     }
-    // m_Settings.SetPosition(YJson::A{x(), y()});
     SavePosition(pos());
   }
   this->WidgetBase::mouseReleaseEvent(event);

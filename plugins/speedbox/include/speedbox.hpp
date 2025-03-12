@@ -7,6 +7,7 @@
 #include <neobox/widgetbase.hpp>
 #include <neobox/pluginobject.h>
 #include <speedboxcfg.h>
+#include <sidechooser.hpp>
 
 namespace fs = std::filesystem;
 
@@ -24,18 +25,17 @@ private:
   class MenuBase& m_NetCardMenu;
   std::any m_AppBarData;
 
+  friend void SideChooser::showEvent(QShowEvent*);
   QRect m_ScreenGeometry;
   class NetSpeedHelper& m_NetSpeedHelper;
   class ProcessForm* m_ProcessForm;
   std::string m_MemFrameStyle;
 
   class QPropertyAnimation* m_Animation;
-  enum ScreenSide: uint32_t {
-    Left = 0b1000, Right = 0b0010,
-    Top = 0b0001, Bottom = 0b0100,
-    None = 0
-  } m_HideSide = ScreenSide::None;
 
+  friend void SideChooser::SetupUi(SpeedBox*);
+  using ScreenSide = SideChooser::ScreenSide;
+  SideChooser::ScreenSide m_HideSide = ScreenSide::None;
   uint32_t m_ScreenAround = ScreenSide::None;
 
 protected:

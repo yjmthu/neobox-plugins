@@ -127,21 +127,24 @@ void NeoTranslateDlg::showEvent(QShowEvent* event) {
     if (speedbox) {
       const auto qFormRect = speedbox->frameGeometry();
 
-      const auto size = QGuiApplication::primaryScreen()->size();
-      const auto mSize = frameSize();
-      int x, y;
-      y = (mSize.height() + qFormRect.bottom() > size.height())
-              ? qFormRect.top() - mSize.height()
-              : qFormRect.bottom();
-      if (((mSize.width() + qFormRect.width()) >> 1) + qFormRect.left() >
-          size.width()) {
-        x = size.width() - mSize.width();
-      } else if ((qFormRect.left() << 1) + qFormRect.width() < mSize.width()) {
-        x = 0;
-      } else {
-        x = qFormRect.right() - ((qFormRect.width() + mSize.width()) >> 1);
+      const auto screen = QGuiApplication::screenAt(QCursor::pos());
+      if (screen) {
+        const auto sGeo = screen->geometry();
+        const auto mSize = frameSize();
+        int x, y;
+        y = (mSize.height() + qFormRect.bottom() > sGeo.height())
+                ? qFormRect.top() - mSize.height()
+                : qFormRect.bottom();
+        if (((mSize.width() + qFormRect.width()) / 2) + qFormRect.left() >
+            sGeo.width()) {
+          x = sGeo.width() - mSize.width();
+        } else if (qFormRect.left() + qFormRect.right() < mSize.width() + sGeo.left() * 2) {
+          x = sGeo.left();
+        } else {
+          x = qFormRect.right() - ((qFormRect.width() + mSize.width()) / 2);
+        }
+        m_LastPostion = QPoint(x, y);
       }
-      m_LastPostion = QPoint(x, y);
     }
   }
 

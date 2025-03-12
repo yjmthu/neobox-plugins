@@ -6,6 +6,7 @@
 #include <neobox/systemapi.h>
 #include <neobox/neosystemtray.hpp>
 #include <netspeedhelper.h>
+#include <sidechooser.hpp>
 #include <neobox/neomenu.hpp>
 
 #include <neobox/menubase.hpp>
@@ -341,24 +342,32 @@ void PluginName::LoadChooseSkinMenu(MenuBase* parent)
 void PluginName::LoadHideAsideMenu(MenuBase* parent)
 {
 
-  const auto menu = new MenuBase(parent);
-  parent->addAction("贴边隐藏")->setMenu(menu);
+  // const auto menu = new MenuBase(parent);
+  // parent->addAction("贴边隐藏")->setMenu(menu);
 
-  auto lst = {"上", "右", "下", "左"};
-  const int32_t set = m_Settings.GetHideAside();
-  int32_t bit = 1;
-  for (auto i: lst) {
-    auto const action = menu->addAction(i);
-    action->setCheckable(true);
-    action->setChecked(set & bit);
-    QObject::connect(action, &QAction::triggered, menu, [this, bit](bool on){
-      auto obj = m_Settings.GetHideAside();
-      obj = on ? (obj | bit) : (obj & ~bit);
-      m_Settings.SetHideAside(obj);
-      mgr->ShowMsg("设置成功！");
-    });
-    bit <<= 1;
-  }
+  // auto lst = {"上", "右", "下", "左"};
+  // const uint32_t set = m_Settings.GetHideAside();
+  // uint32_t bit = 1;
+  // for (auto i: lst) {
+  //   auto const action = menu->addAction(i);
+  //   action->setCheckable(true);
+  //   action->setChecked(set & bit);
+  //   QObject::connect(action, &QAction::triggered, menu, [this, bit](bool on){
+  //     auto obj = m_Settings.GetHideAside();
+  //     obj = on ? (obj | bit) : (obj & ~bit);
+  //     m_Settings.SetHideAside(obj);
+  //     mgr->ShowMsg("设置成功！");
+  //   });
+  //   bit <<= 1;
+  // }
+
+  auto action = parent->addAction("贴边隐藏");
+  QObject::connect(action, &QAction::triggered, parent, [this, action] {
+    if (!m_Speedbox) return;
+    action->setEnabled(false);
+    SideChooser(m_Speedbox).Exec();
+    action->setEnabled(true);
+  });
 }
 
 void PluginName::RemoveSkinConnect(QAction* action)
