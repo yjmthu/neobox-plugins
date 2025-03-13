@@ -188,7 +188,10 @@ AsyncVoid PluginName::LogInOut(bool login, bool silent) {
     mgr->ShowMsg("正在运行中，请稍后");
     co_return;
   }
-  struct Guard { ~Guard() { isRunning = false; } } guard;
+  struct Guard {
+    Guard() { isRunning = true; }
+    ~Guard() { isRunning = false; }
+  } guard;
 
   std::optional<Portal::Error> res = std::nullopt;
 
