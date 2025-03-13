@@ -18,7 +18,10 @@ class Portal {
 public:
   Portal()
     : client(HttpUrl(u8"login." + mainHost, u8"/"), true)
-  { }
+  {
+    client.SetHeader(u8"User-Agent", u8"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3");
+    client.SetTimeOut(std::chrono::seconds(2));
+  }
 
   ~Portal() {
     // std::lock_guard<Mutex> lock(mtx);
