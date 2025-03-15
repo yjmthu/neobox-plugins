@@ -215,9 +215,9 @@ std::vector<OcrResult> NeoOcr::OcrTesseractEx(const QImage& image)
 
 #ifdef _WIN32
 AsyncU8String WinOcrGet(std::wstring name, SoftwareBitmap& softwareBitmap) {
-// #ifdef _DEBUG
+#ifdef _DEBUG
   co_await SaveSoftwareBitmapToFile(softwareBitmap).awaiter();
-// #endif
+#endif
 
   std::wstring result;
 
