@@ -98,23 +98,23 @@ NeoOcr::~NeoOcr()
 }
 
 #ifdef _WIN32
-static auto OpenImageFile(std::wstring uriImage) {
+static AsyncAction<SoftwareBitmap> OpenImageFile(std::wstring uriImage) {
   // auto const& streamRef = RandomAccessStreamReference::CreateFromFile(StorageFile::GetFileFromPathAsync(uriImage).get());
-  auto file = StorageFile::GetFileFromPathAsync(uriImage).get();
-  auto stream = file.OpenAsync(FileAccessMode::Read).get();
-  auto const& decoder = BitmapDecoder::CreateAsync(stream);
-  auto softwareBitmap = decoder.get().GetSoftwareBitmapAsync();
-  return softwareBitmap;
+  auto file = co_await StorageFile::GetFileFromPathAsync(uriImage);
+  auto stream = co_await file.OpenAsync(FileAccessMode::Read);
+  auto const& decoder = co_await BitmapDecoder::CreateAsync(stream);
+  auto softwareBitmap = co_await decoder.GetSoftwareBitmapAsync();
+  co_return softwareBitmap;
 }
 
-IAsyncAction SaveSoftwareBitmapToFile(SoftwareBitmap& softwareBitmap)
+static AsyncVoid SaveSoftwareBitmapToFile(SoftwareBitmap& softwareBitmap)
 {
   StorageFolder currentfolder = co_await StorageFolder::GetFolderFromPathAsync(std::filesystem::current_path().wstring());
   StorageFile outimagefile = co_await currentfolder.CreateFileAsync(L"NEOOCR.jpg", CreationCollisionOption::ReplaceExisting);
   IRandomAccessStream writestream = co_await outimagefile.OpenAsync(FileAccessMode::ReadWrite);
-  BitmapEncoder encoder = co_await BitmapEncoder::CreateAsync(BitmapEncoder::JpegEncoderId(), writestream);
+  BitmapEncoder encoder = co_await BitmapEncoder::CreateAsync(BitmapEncoder::PngEncoderId(), writestream);
   encoder.SetSoftwareBitmap(softwareBitmap);
-  encoder.FlushAsync();
+  co_await encoder.FlushAsync();
   writestream.Close();
 }
 #endif
@@ -126,8 +126,8 @@ AsyncU8String NeoOcr::GetText(QImage image)
   const auto engine = static_cast<Engine>(m_Settings.GetOcrEngine());
   switch (engine) {
   case Windows: {
-    if (image.format() != QImage::Format_RGB32) {
-      image = image.convertToFormat(QImage::Format_RGB32);
+    if (image.format() != QImage::Format_RGBA8888) {
+      image = image.convertToFormat(QImage::Format_RGBA8888);
     }
     auto res = co_await OcrWindows(image).awaiter();
     if (res) result = std::move(*res);
@@ -215,7 +215,10 @@ std::vector<OcrResult> NeoOcr::OcrTesseractEx(const QImage& image)
 
 #ifdef _WIN32
 AsyncU8String WinOcrGet(std::wstring name, SoftwareBitmap& softwareBitmap) {
-  // co_await SaveSoftwareBitmapToFile(softwareBitmap);
+// #ifdef _DEBUG
+  co_await SaveSoftwareBitmapToFile(softwareBitmap).awaiter();
+// #endif
+
   std::wstring result;
 
   std::function engine = WinOcr::OcrEngine::TryCreateFromUserProfileLanguages;
@@ -256,7 +259,7 @@ NeoOcr::String NeoOcr::OcrWindows(const QImage& image)
 {
 #ifdef _WIN32
   SoftwareBitmap softwareBitmap(
-      BitmapPixelFormat::Bgra8,
+      BitmapPixelFormat::Rgba8,
       image.width(), image.height()
   );
   {
