@@ -94,11 +94,12 @@ AsyncError Portal::Init(std::u8string username, std::u8string password) {
   UnicodeSearch search;
   
   client.SetUrl(HttpUrl(loginHost, u8"/"));
+  client.SetRedirect(3);
 
   auto res = co_await client.GetAsync();
 
   if (res->status != 200) {
-    std::cerr << "Can not go to <" << client.GetUrl() << ">\n";
+    std::cerr << "Init error, can not go to <" << client.GetUrl() << "> Status code: " << res->status << std::endl;
     co_return Error::NetworkError;
   }
 
@@ -109,7 +110,8 @@ AsyncError Portal::Init(std::u8string username, std::u8string password) {
     client.SetUrl(url);
     res = co_await client.GetAsync();
     if (res->status != 200) {
-      std::cerr << "Can not go to <" << client.GetUrl() << ">\n";
+      std::cerr << "Init error, can not go to <" << client.GetUrl() << "> Status code: "
+        << res->status << std::endl;
       co_return Error::NetworkError;
     }
   }
