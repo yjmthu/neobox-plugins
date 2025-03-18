@@ -44,7 +44,7 @@ private:
   OcrConfig m_Settings;
   QAction* m_MainMenuAction;
   class NeoOcr* const m_Ocr;
-  OcrDialog* m_OcrDialog;
+  class OcrDialog* m_OcrDialog;
   bool m_IsBusy = false;
 signals:
   void RecognizeFinished();

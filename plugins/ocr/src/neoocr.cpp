@@ -17,6 +17,8 @@
 #include <leptonica/allheaders.h>
 #ifdef _WIN32
 #include <leptonica/pix_internal.h>
+#else
+#include <leptonica/pix.h>
 #endif
 
 std::unique_ptr<Pix, void(*)(Pix*)> QImage2Pix(const QImage& qImage);

@@ -19,7 +19,7 @@ protected:
   void closeEvent(QCloseEvent* event) override;
   void showEvent(QShowEvent* event) override;
 public:
-  SideChooser(SpeedBox* parent);
+  SideChooser(class SpeedBox* parent);
   ~SideChooser();
   void Exec();
 private:
