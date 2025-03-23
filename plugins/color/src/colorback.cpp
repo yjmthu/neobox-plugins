@@ -8,7 +8,10 @@ ColorBack::ColorBack(QPixmap pixmap)
   : QWidget(nullptr)
   , m_Pixmap(pixmap)
   , m_Image(m_Pixmap.toImage())
-{}
+{
+  // avoid global style sheet pollution
+  setStyleSheet("background-color:transparent;");
+}
 
 ColorBack::~ColorBack()
 {}

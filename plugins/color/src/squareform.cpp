@@ -108,11 +108,11 @@ void SquareForm::SetScaleSize(short times)
   move(m_Center - frameGeometry().center() + pos());
 }
 
-void SquareForm::paintEvent(QPaintEvent *event)
-{
-  QPainter painter(this);
-  painter.drawPixmap(0, 0, m_Pixmap);
-}
+// void SquareForm::paintEvent(QPaintEvent *event)
+// {
+//   QPainter painter(this);
+//   painter.drawPixmap(0, 0, m_Pixmap);
+// }
 
 void SquareForm::mouseMoveEvent(QMouseEvent *event)
 {

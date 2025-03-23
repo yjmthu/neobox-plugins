@@ -8,7 +8,7 @@ class SquareForm: public ColorBack
   Q_OBJECT
 
 protected:
-  void paintEvent(QPaintEvent *event) override;
+  // void paintEvent(QPaintEvent *event) override;
   void showEvent(QShowEvent *event) override;
   void mouseMoveEvent(QMouseEvent *event) override;
   void enterEvent(QEnterEvent *event) override;
@@ -25,7 +25,7 @@ private:
   QPoint m_Center;
   const QSize m_BaseSize;
   const short m_BaseScal;
-  QPixmap m_Pixmap;
+  // QPixmap m_Pixmap;
   short m_ScalSize;
   class ColorBigger* m_ColorBigger;
 };
