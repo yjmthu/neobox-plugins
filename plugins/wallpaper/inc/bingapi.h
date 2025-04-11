@@ -28,7 +28,8 @@ private:
   class NeoTimer *m_Timer;
 
 private:
-  YJson *m_Data;
+  // YJson *m_Data;
+  std::unique_ptr<YJson> m_Data;
   std::unique_ptr<class HttpLib> m_DataRequest;
   const fs::path m_DataPath = m_DataDir / u8"BingApiData.json";
 };

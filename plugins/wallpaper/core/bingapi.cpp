@@ -18,7 +18,7 @@ using namespace Wall;
 
 BingApi::BingApi(YJson& setting)
   : WallBase(InitSetting(setting))
-  , m_Data(nullptr)
+  , m_Data { nullptr }
   , m_Timer(NeoTimer::New())
 {
   InitData();
@@ -29,7 +29,6 @@ BingApi::~BingApi()
 {
   m_QuitFlag = true;
   m_Timer->Destroy();
-  delete m_Data;
 }
 
 YJson& BingApi::InitSetting(YJson& setting) {
@@ -63,7 +62,7 @@ void BingApi::InitData()
     return;
   }
   try {
-    m_Data = new YJson(m_DataPath, YJson::UTF8);
+    m_Data = std::make_unique<YJson>(m_DataPath, YJson::UTF8);
   } catch (std::runtime_error error[[maybe_unused]]) {
 #ifdef _DEBUG
     std::cerr << error.what() << std::endl;
@@ -76,9 +75,9 @@ Bool BingApi::CheckData()
   // https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8
 
   m_DataMutex.lock();
-  if (m_Setting[u8"curday"].getValueString() != GetToday()) {
-    delete m_Data;
-    m_Data = nullptr;
+  auto const today = GetToday();
+  if (m_Setting[u8"curday"].getValueString() != today) {
+    m_Data.reset();
   }
   HttpUrl url(m_Setting[u8"api"].getValueString() + u8"/HPImageArchive.aspx?", {
     {u8"format", u8"js"},
@@ -95,10 +94,10 @@ Bool BingApi::CheckData()
   auto res = co_await m_DataRequest->GetAsync();
   if (res->status / 100 == 2) {
     m_DataMutex.lock();
-    m_Data = new YJson(res->body.begin(), res->body.end());
+    m_Data =  std::make_unique<YJson>(res->body.begin(), res->body.end());
     m_Data->toFile(m_DataPath);
 
-    m_Setting[u8"curday"] = GetToday();
+    m_Setting[u8"curday"] = today;
     SaveSetting();
     m_DataMutex.unlock();
     co_return true;
@@ -140,8 +139,7 @@ void BingApi::SetJson(const YJson& json)
   WallBase::SetJson(json);
 
   m_DataMutex.lock();
-  delete m_Data;
-  m_Data = nullptr;
+  m_Data.reset();
   if (!GetAutoDownload()) { m_Timer->Expire(); }
   m_DataMutex.unlock();
   return;
@@ -177,13 +175,13 @@ void BingApi::AutoDownload() {
 std::u8string BingApi::GetToday() {
   auto utc = chrono::system_clock::now();
   std::string result =
-      std::format("{0:%Y-%m-%d}", chrono::current_zone()->to_local(utc));
+      std::format("{:%Y-%m-%d}", chrono::current_zone()->to_local(utc));
   return std::u8string(result.begin(), result.end());
 }
 
 std::u8string BingApi::GetImageName(YJson& imgInfo) {
   // see https://codereview.stackexchange.com/questions/156695/converting-stdchronotime-point-to-from-stdstring
-  const auto fmt = Utf82Wide(m_Setting[u8"name-format"].getValueString());
+  const auto& fmt = m_Setting[u8"name-format"].getValueString();
   const std::string date(Utf8AsString(imgInfo[u8"enddate"].getValueString()));
   const std::u8string& copyright =
       imgInfo[u8"copyright"].getValueString();
@@ -191,16 +189,17 @@ std::u8string BingApi::GetImageName(YJson& imgInfo) {
 
   std::tm tm {};
   std::istringstream(date) >> std::get_time(&tm, "%Y%m%d");
-  chrono::system_clock::time_point timePoint  = {};
-  timePoint += chrono::seconds(std::mktime(&tm)) + 24h;
+  auto tp = std::chrono::system_clock::from_time_t(std::mktime(&tm));
+  auto timePoint = std::chrono::zoned_time(chrono::current_zone(), tp);
 
-  std::wstring titleUnicode = Utf82Wide(title);
+  auto titleUnicode = reinterpret_cast<const std::string&>(title);
   for (auto& c: titleUnicode) {
-    if (L"/\\;:"sv.find(c) != std::wstring::npos) {
+    if ("/\\;:"sv.find(c) != std::string::npos) {
       c = '_';
     }
   }
-  auto const & copyrightUnicode = Utf82Wide(copyright);
-  std::wstring result = std::vformat(fmt, std::make_wformat_args(timePoint, titleUnicode, copyrightUnicode));
-  return Wide2Utf8(result);
+  auto const & copyrightUnicode = reinterpret_cast<const std::string&>(copyright);
+  auto result = std::vformat(reinterpret_cast<const std::string&>(fmt), std::make_format_args(timePoint, titleUnicode, copyrightUnicode));
+
+  return reinterpret_cast<std::u8string&>(result);
 }
