@@ -152,10 +152,8 @@ Void Wallpaper::SetNext() {
     if (m_Wallpaper == m_BingWallpaper) {
       auto cur = m_PrevImgs.GetCurrent();
       fs::path next = res->ImagePath;
-      if (cur && fs::equivalent(*cur, next)) {
-#ifdef _DEBUG
-        std::cout << "bing wallpaper is the same as the current wallpaper." << std::endl;
-#endif
+      std::error_code error;
+      if (cur && fs::equivalent(*cur, next, error)) {
         res = co_await m_Wallpaper->GetNext().awaiter();
         if (!res || res->ErrorCode != ImageInfo::NoErr) {
           mgr->ShowMsgbox("出错", "获取必应壁纸失败！");
